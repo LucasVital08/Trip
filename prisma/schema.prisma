@@ -1,0 +1,455 @@
+// Trip — marketplace de viagens compartilhadas
+// Modelagem coerente com o enquadramento de INTERMEDIAÇÃO:
+// a plataforma conecta motoristas e passageiros, retém a taxa de serviço
+// e repassa o restante ao motorista (Payment/Payout separados).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum VehicleCategory {
+  HATCH
+  SEDAN
+  SUV
+  MINIVAN
+  PICKUP
+}
+
+enum ExperienceTier {
+  ECONOMICO
+  CONFORTO
+  PREMIUM
+}
+
+enum TripStatus {
+  PUBLISHED
+  FULL
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED_BY_PASSENGER
+  CANCELLED_BY_DRIVER
+  EXPIRED
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PayoutStatus {
+  HELD      // plataforma reteve (escrow)
+  RELEASED  // liberado após conclusão da viagem
+  PAID      // transferido ao motorista
+  REVERSED  // estornado (cancelamento/reembolso)
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// ─────────────────────────────── Usuários ───────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  phone         String?
+  phoneVerified DateTime?
+  avatarUrl     String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // verificação de identidade (documento + selfie)
+  identityStatus VerificationStatus @default(UNVERIFIED)
+
+  // contato de segurança (compartilhamento de viagem / emergência)
+  safetyContactName  String?
+  safetyContactPhone String?
+
+  // agregados de reputação (denormalizados para listagem rápida)
+  driverRatingAvg    Float @default(0)
+  driverRatingCount  Int   @default(0)
+  passengerRatingAvg Float @default(0)
+  passengerRatingCnt Int   @default(0)
+
+  blockedAt DateTime?
+
+  accounts        Account[]
+  driverProfile   DriverProfile?
+  vehicles        Vehicle[]
+  tripsAsDriver   Trip[]                 @relation("DriverTrips")
+  bookings        Booking[]
+  reviewsWritten  Review[]               @relation("ReviewAuthor")
+  reviewsReceived Review[]               @relation("ReviewTarget")
+  verifications   IdentityVerification[]
+  favorites       Favorite[]
+  messagesSent    Message[]
+  convosAsPassenger Conversation[] @relation("ConvoPassenger")
+  convosAsDriver    Conversation[] @relation("ConvoDriver")
+  payouts         Payout[]
+  reportsMade     Report[]               @relation("Reporter")
+  reportsReceived Report[]               @relation("Reported")
+
+  @@index([email])
+}
+
+// OAuth (Auth.js)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model DriverProfile {
+  id            String             @id @default(cuid())
+  userId        String             @unique
+  cnhNumber     String
+  cnhCategory   String
+  cnhExpiresAt  DateTime
+  status        VerificationStatus @default(PENDING)
+  tripMessage   String? // "recado padrão" do motorista
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model IdentityVerification {
+  id          String             @id @default(cuid())
+  userId      String
+  provider    String // "mock-kyc", "serpro", etc.
+  providerRef String?
+  status      VerificationStatus @default(PENDING)
+  documentUrl String?
+  selfieUrl   String?
+  notes       String?
+  createdAt   DateTime           @default(now())
+  reviewedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─────────────────────────────── Veículos ───────────────────────────────
+
+model Vehicle {
+  id        String          @id @default(cuid())
+  ownerId   String
+  brand     String
+  model     String
+  year      Int
+  color     String
+  plate     String
+  category  VehicleCategory @default(HATCH)
+  seats     Int             @default(4) // lugares para passageiros
+  photos    String[]
+  createdAt DateTime        @default(now())
+
+  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  trips Trip[]
+
+  @@index([ownerId])
+}
+
+// ─────────────────────────────── Catálogos ───────────────────────────────
+
+// Catálogo extensível de opcionais/amenidades (modelo Airbnb)
+model Amenity {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  label       String
+  icon        String // nome do ícone no set interno
+  description String?
+  tierWeight  Int     @default(1) // peso na derivação da faixa de experiência
+  sortOrder   Int     @default(0)
+  active      Boolean @default(true)
+
+  trips TripAmenity[]
+}
+
+// Catálogo de cidades atendidas (autocomplete + coordenadas p/ rota)
+model City {
+  id    String @id @default(cuid())
+  name  String
+  state String // UF
+  slug  String @unique
+  lat   Float
+  lng   Float
+
+  @@index([name])
+}
+
+// ─────────────────────────────── Viagens ───────────────────────────────
+
+model Trip {
+  id          String     @id @default(cuid())
+  driverId    String
+  vehicleId   String
+  status      TripStatus @default(PUBLISHED)
+
+  originCity  String
+  originState String
+  originLat   Float
+  originLng   Float
+  destCity    String
+  destState   String
+  destLat     Float
+  destLng     Float
+
+  departAt    DateTime
+  arriveEstAt DateTime
+  distanceKm  Int
+  durationMin Int
+
+  meetingPoint  String
+  dropoffPoint  String?
+  notes         String? // "recado da viagem"
+  seatsTotal    Int
+  seatsAvailable Int
+
+  pricePerSeatCents Int
+  tier              ExperienceTier @default(ECONOMICO)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cancelledAt DateTime?
+
+  driver    User          @relation("DriverTrips", fields: [driverId], references: [id])
+  vehicle   Vehicle       @relation(fields: [vehicleId], references: [id])
+  amenities TripAmenity[]
+  bookings  Booking[]
+  reviews   Review[]
+  favorites Favorite[]
+  convos    Conversation[]
+
+  @@index([originCity, destCity, departAt])
+  @@index([driverId])
+  @@index([status, departAt])
+}
+
+model TripAmenity {
+  tripId    String
+  amenityId String
+
+  trip    Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  amenity Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([tripId, amenityId])
+}
+
+// ─────────────────────────────── Reservas & Financeiro ───────────────────────────────
+
+model Booking {
+  id     String        @id @default(cuid())
+  code   String        @unique // referência curta ex. TRP-8F3K2A
+  tripId String
+  passengerId String
+  seats  Int
+  status BookingStatus @default(PENDING_PAYMENT)
+
+  // fotografia de preços no momento da reserva (imutável)
+  pricePerSeatCents Int
+  subtotalCents     Int // motorista
+  serviceFeeCents   Int // taxa Trip
+  totalCents        Int // pago pelo passageiro
+
+  shareToken String? @unique // link de acompanhamento em tempo real
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  cancelledAt DateTime?
+  cancelReason String?
+
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  passenger User     @relation(fields: [passengerId], references: [id])
+  payment   Payment?
+  payout    Payout?
+  reviews   Review[]
+
+  @@index([passengerId])
+  @@index([tripId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  bookingId   String        @unique
+  provider    String // "mock", "stripe", "mercadopago"...
+  providerRef String? // id da charge/intent no provedor
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+
+  amountCents       Int // total cobrado do passageiro
+  serviceFeeCents   Int // retido pela plataforma
+  driverAmountCents Int // repasse ao motorista
+
+  pixQrCode    String? // copia-e-cola do Pix (sandbox/mock)
+  cardLast4    String?
+  paidAt       DateTime?
+  refundedAt   DateTime?
+  refundCents  Int?
+  failReason   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([status])
+}
+
+// Repasse ao motorista (escrow → liberação pós-viagem)
+model Payout {
+  id         String       @id @default(cuid())
+  driverId   String
+  bookingId  String       @unique
+  amountCents Int
+  status     PayoutStatus @default(HELD)
+  releasedAt DateTime?
+  paidAt     DateTime?
+  createdAt  DateTime     @default(now())
+
+  driver  User    @relation(fields: [driverId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([driverId, status])
+}
+
+// ─────────────────────────────── Reputação ───────────────────────────────
+
+enum ReviewDirection {
+  PASSENGER_TO_DRIVER
+  DRIVER_TO_PASSENGER
+}
+
+model Review {
+  id        String          @id @default(cuid())
+  tripId    String
+  bookingId String
+  authorId  String
+  targetId  String
+  direction ReviewDirection
+  rating    Int // 1..5
+  comment   String?
+  createdAt DateTime        @default(now())
+
+  trip    Trip    @relation(fields: [tripId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+  author  User    @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target  User    @relation("ReviewTarget", fields: [targetId], references: [id])
+
+  @@unique([bookingId, authorId])
+  @@index([targetId, direction])
+}
+
+// ─────────────────────────────── Social ───────────────────────────────
+
+model Favorite {
+  userId    String
+  tripId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tripId])
+}
+
+model Conversation {
+  id          String   @id @default(cuid())
+  tripId      String
+  passengerId String
+  driverId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  passenger User      @relation("ConvoPassenger", fields: [passengerId], references: [id])
+  driver    User      @relation("ConvoDriver", fields: [driverId], references: [id])
+  messages  Message[]
+
+  @@unique([tripId, passengerId])
+  @@index([passengerId])
+  @@index([driverId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+// ─────────────────────────────── Segurança ───────────────────────────────
+
+model Report {
+  id           String       @id @default(cuid())
+  reporterId   String
+  targetUserId String
+  tripId       String?
+  reason       String
+  details      String?
+  status       ReportStatus @default(OPEN)
+  createdAt    DateTime     @default(now())
+  resolvedAt   DateTime?
+
+  reporter User @relation("Reporter", fields: [reporterId], references: [id])
+  target   User @relation("Reported", fields: [targetUserId], references: [id])
+
+  @@index([status])
+}

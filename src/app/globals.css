@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* ─── Tokens da marca Trip ─────────────────────────────────────────────── */
+@theme {
+  --color-ink: #0b1f2a; /* asfalto noite */
+  --color-ink-2: #13303d;
+  --color-ink-3: #1d4152;
+  --color-amber: #f2a65a; /* faixa de rodovia */
+  --color-amber-deep: #e0852f;
+  --color-sand: #f5efe6; /* superfície clara */
+  --color-sand-card: #fffdf9;
+  --color-line: #ded4c4;
+  --color-trust: #2e7d5b; /* verificação/confiança */
+
+  --font-display: var(--font-fraunces), "Georgia", serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(11 31 42 / 0.06), 0 4px 16px rgb(11 31 42 / 0.07);
+  --shadow-card-hover: 0 2px 4px rgb(11 31 42 / 0.08), 0 12px 32px rgb(11 31 42 / 0.14);
+}
+
+body {
+  background: var(--color-sand);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Faixa tracejada de rodovia (assinatura visual) ───────────────────── */
+.road-stripe {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-amber) 0,
+    var(--color-amber) 28px,
+    transparent 28px,
+    transparent 48px
+  );
+  border-radius: 999px;
+}
+
+.road-stripe-subtle {
+  height: 3px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-amber) 0,
+    var(--color-amber) 20px,
+    transparent 20px,
+    transparent 36px
+  );
+  border-radius: 999px;
+}
+
+/* foco visível por teclado, coerente com a marca */
+:focus-visible {
+  outline: 2px solid var(--color-amber-deep);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* range slider no tom da marca */
+input[type="range"] {
+  accent-color: var(--color-amber-deep);
+}

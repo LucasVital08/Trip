@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: trip
+    ports:
+      - "5432:5432"
+    volumes:
+      - trip-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trip"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Aplicação em produção (opcional — em dev use `pnpm dev` + apenas o db)
+  app:
+    build: .
+    profiles: ["prod"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/trip
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production}
+      AUTH_TRUST_HOST: "true"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      PAYMENT_PROVIDER: mock
+      KYC_PROVIDER: mock
+      MAPS_PROVIDER: static
+      NOTIFICATION_PROVIDER: console
+      PLATFORM_FEE_PERCENT: "12"
+    ports:
+      - "3000:3000"
+
+volumes:
+  trip-pgdata:

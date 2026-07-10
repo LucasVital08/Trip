@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict prQTcdWumjtNDeyOQRYCxvKtrgvq8WJAMjRikZSauHwFqG031WmE1dyghgVA77h
 
 -- Dumped from database version 16.13 (Ubuntu 16.13-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.13 (Ubuntu 16.13-0ubuntu0.24.04.1)
@@ -1645,5 +1644,4 @@ ALTER TABLE ONLY public."Vehicle"
 -- PostgreSQL database dump complete
 --
 
-\unrestrict prQTcdWumjtNDeyOQRYCxvKtrgvq8WJAMjRikZSauHwFqG031WmE1dyghgVA77h
 

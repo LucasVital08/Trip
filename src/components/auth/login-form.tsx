@@ -12,7 +12,7 @@ export function LoginForm({ callbackUrl, showGoogle }: { callbackUrl?: string; s
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="callbackUrl" value={callbackUrl ?? "/"} />
         <Field label="E-mail" htmlFor="login-email">
-          <input id="login-email" name="email" type="email" autoComplete="email" required className={inputCls} placeholder="voce@email.com" />
+          <input id="login-email" name="email" type="email" autoComplete="email" defaultValue={state.values?.email} required className={inputCls} placeholder="voce@email.com" />
         </Field>
         <Field label="Senha" htmlFor="login-password">
           <input id="login-password" name="password" type="password" autoComplete="current-password" required className={inputCls} placeholder="••••••••" />

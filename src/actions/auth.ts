@@ -5,11 +5,14 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { formValues } from "@/lib/form-values";
 import { signIn, signOut } from "@/lib/auth";
 
 export interface ActionState {
   error?: string;
   ok?: boolean;
+  /** valores enviados, devolvidos em caso de erro para repopular o form */
+  values?: Record<string, string>;
 }
 
 const registerSchema = z.object({
@@ -28,12 +31,12 @@ export async function registerAction(
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0].message, values: formValues(formData, ["password"]) };
   }
   const { name, email, password } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Já existe uma conta com este e-mail. Faça login." };
+  if (existing) return { error: "Já existe uma conta com este e-mail. Faça login.", values: formValues(formData, ["password"]) };
 
   await prisma.user.create({
     data: { name, email, passwordHash: await hash(password, 10) },
@@ -54,7 +57,7 @@ export async function loginAction(
     await signIn("credentials", { email, password, redirect: false });
   } catch (err) {
     if (err instanceof AuthError) {
-      return { error: "E-mail ou senha incorretos." };
+      return { error: "E-mail ou senha incorretos.", values: formValues(formData, ["password"]) };
     }
     throw err;
   }

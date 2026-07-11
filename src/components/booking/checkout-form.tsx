@@ -27,6 +27,8 @@ export function CheckoutForm({
   const [seats, setSeats] = useState(1);
   const [method, setMethod] = useState<"PIX" | "CARD">("PIX");
   const [cardNumber, setCardNumber] = useState("");
+  const [cardExp, setCardExp] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
   const [state, formAction] = useActionState(createBookingAction, {});
 
   const price = computeBookingPrice(pricePerSeatCents, seats, feePercent, 0);
@@ -113,11 +115,11 @@ export function CheckoutForm({
             </div>
             <div>
               <label htmlFor="card-exp" className="mb-1.5 block text-sm font-semibold text-ink/80">Validade</label>
-              <input id="card-exp" placeholder="12/29" autoComplete="cc-exp" required className="w-full rounded-xl border border-line bg-sand px-3.5 py-2.5 text-sm" />
+              <input id="card-exp" placeholder="12/29" autoComplete="cc-exp" value={cardExp} onChange={(e) => setCardExp(e.target.value)} required className="w-full rounded-xl border border-line bg-sand px-3.5 py-2.5 text-sm" />
             </div>
             <div>
               <label htmlFor="card-cvc" className="mb-1.5 block text-sm font-semibold text-ink/80">CVC</label>
-              <input id="card-cvc" placeholder="123" inputMode="numeric" autoComplete="cc-csc" required className="w-full rounded-xl border border-line bg-sand px-3.5 py-2.5 text-sm" />
+              <input id="card-cvc" placeholder="123" inputMode="numeric" autoComplete="cc-csc" value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} required className="w-full rounded-xl border border-line bg-sand px-3.5 py-2.5 text-sm" />
             </div>
           </div>
         )}

@@ -10,10 +10,10 @@ export function RegisterForm() {
   return (
     <form action={formAction} className="space-y-4">
       <Field label="Nome completo" htmlFor="reg-name">
-        <input id="reg-name" name="name" autoComplete="name" required className={inputCls} placeholder="Maria da Silva" />
+        <input id="reg-name" name="name" autoComplete="name" defaultValue={state.values?.name} required className={inputCls} placeholder="Maria da Silva" />
       </Field>
       <Field label="E-mail" htmlFor="reg-email">
-        <input id="reg-email" name="email" type="email" autoComplete="email" required className={inputCls} placeholder="voce@email.com" />
+        <input id="reg-email" name="email" type="email" autoComplete="email" defaultValue={state.values?.email} required className={inputCls} placeholder="voce@email.com" />
       </Field>
       <Field label="Senha" htmlFor="reg-password" hint="Mínimo de 6 caracteres.">
         <input id="reg-password" name="password" type="password" autoComplete="new-password" required minLength={6} className={inputCls} placeholder="••••••••" />

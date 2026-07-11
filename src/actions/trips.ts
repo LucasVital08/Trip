@@ -11,6 +11,7 @@ import { getPaymentProvider } from "@/providers/payments";
 import { notify } from "@/providers/notifications";
 import { PLATFORM } from "@/config/platform";
 import { parseBRLToCents } from "@/lib/money";
+import { formValues } from "@/lib/form-values";
 import type { ActionState } from "./auth";
 
 const publishSchema = z.object({
@@ -50,14 +51,15 @@ export async function publishTripAction(
     notes: formData.get("notes") || undefined,
     amenities: formData.getAll("amenities").map(String),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const values = formValues(formData);
+  if (!parsed.success) return { error: parsed.error.issues[0].message, values };
   const data = parsed.data;
 
-  if (data.originSlug === data.destSlug) return { error: "Origem e destino precisam ser diferentes." };
+  if (data.originSlug === data.destSlug) return { error: "Origem e destino precisam ser diferentes.", values };
 
   const priceCents = parseBRLToCents(data.price);
   if (priceCents === null || priceCents < PLATFORM.minPricePerSeatCents || priceCents > PLATFORM.maxPricePerSeatCents) {
-    return { error: `Preço por assento deve ficar entre R$ ${PLATFORM.minPricePerSeatCents / 100} e R$ ${PLATFORM.maxPricePerSeatCents / 100}.` };
+    return { error: `Preço por assento deve ficar entre R$ ${PLATFORM.minPricePerSeatCents / 100} e R$ ${PLATFORM.maxPricePerSeatCents / 100}.`, values };
   }
 
   const [origin, dest, vehicle] = await Promise.all([
@@ -65,13 +67,13 @@ export async function publishTripAction(
     prisma.city.findUnique({ where: { slug: data.destSlug } }),
     prisma.vehicle.findUnique({ where: { id: data.vehicleId } }),
   ]);
-  if (!origin || !dest) return { error: "Cidade não encontrada no catálogo. Use o autocomplete." };
-  if (!vehicle || vehicle.ownerId !== user.id) return { error: "Veículo inválido." };
-  if (data.seats > vehicle.seats) return { error: `Este veículo comporta no máximo ${vehicle.seats} passageiros.` };
+  if (!origin || !dest) return { error: "Cidade não encontrada no catálogo. Use o autocomplete.", values };
+  if (!vehicle || vehicle.ownerId !== user.id) return { error: "Veículo inválido.", values };
+  if (data.seats > vehicle.seats) return { error: `Este veículo comporta no máximo ${vehicle.seats} passageiros.`, values };
 
   const departAt = new Date(`${data.departDate}T${data.departTime}:00-03:00`);
   if (Number.isNaN(departAt.getTime()) || departAt <= new Date()) {
-    return { error: "A data/hora de saída precisa estar no futuro." };
+    return { error: "A data/hora de saída precisa estar no futuro.", values };
   }
 
   const route = await getMapsProvider().estimateRoute(

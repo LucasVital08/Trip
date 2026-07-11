@@ -7,6 +7,7 @@ import { VehicleCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireDriver } from "@/lib/session";
 import { getKycProvider } from "@/providers/kyc";
+import { formValues } from "@/lib/form-values";
 import { notify } from "@/providers/notifications";
 import type { ActionState } from "./auth";
 
@@ -36,7 +37,9 @@ export async function becomeDriverAction(
     cnhExpiresAt: formData.get("cnhExpiresAt"),
     phone: formData.get("phone"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message, values: formValues(formData) };
+  }
   const data = parsed.data;
 
   const kyc = await getKycProvider().submit({
@@ -79,7 +82,10 @@ export async function becomeDriverAction(
   ]);
 
   if (kyc.status === "REJECTED") {
-    return { error: `Verificação recusada: ${kyc.notes ?? "dados inconsistentes."} Revise e tente novamente.` };
+    return {
+      error: `Verificação recusada: ${kyc.notes ?? "dados inconsistentes."} Revise e tente novamente.`,
+      values: formValues(formData),
+    };
   }
 
   notify({
@@ -120,7 +126,9 @@ export async function addVehicleAction(
     category: formData.get("category"),
     seats: formData.get("seats"),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message, values: formValues(formData) };
+  }
 
   await prisma.vehicle.create({
     data: { ...parsed.data, plate: parsed.data.plate.replace("-", ""), ownerId: user.id, photos: [] },

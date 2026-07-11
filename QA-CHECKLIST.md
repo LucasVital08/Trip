@@ -1,5 +1,29 @@
 # QA-CHECKLIST — roteiro de teste manual do Trip
 
+> ## ✅ Execução automatizada — 11/07/2026
+> A suíte `scripts/qa-e2e.mjs` (Chromium + asserts no banco) executou **41/41
+> casos com sucesso** cobrindo: busca/filtros/ordenação (1.1–1.3, 1.5–1.8,
+> 1.10), detalhe e breakdown (2.1–2.3, 2.5), reserva Pix com webhook, cartão
+> aprovado/recusado, duplicada, própria viagem e link público (3.1–3.4,
+> 3.6–3.8, sendo 3.1 com 2 assentos = 3.5), cancelamento com reembolso integral
+> e cancelamento pelo motorista (4.1, 4.3 — janelas de 50%/0% cobertas por
+> teste unitário), KYC aprovado/recusado, veículo, publicação com sugestão e
+> faixa dinâmica, conclusão com liberação de repasse e extrato (5.1–5.6,
+> 5.8–5.9), avaliação mútua com agregados (6.1–6.3), conta, acesso e rotas
+> protegidas (7.1–7.5), overflow mobile 390px e submit por teclado (8.1–8.2).
+>
+> **Bug encontrado e corrigido (B1):** o React 19 reseta formulários após
+> cada server action — quando uma action retornava erro (KYC recusado, placa
+> inválida, cartão recusado…), os campos digitados eram apagados e o
+> `required` do navegador travava silenciosamente a segunda tentativa.
+> Corrigido devolvendo os valores no estado da action (`state.values`) e
+> repopulando via `defaultValue` (`src/lib/form-values.ts`).
+>
+> **Restam para teste manual/visual:** 1.4, 1.9, 2.4, 2.6, 5.7, 8.3 e 8.4
+> (validações visuais e de gosto — zoom 200%, formatos, painel).
+
+
+
 Marque cada caso: ✅ passou · ❌ falhou (anote o que viu) · ⏭ não testado.
 Contas demo (senha `trip123`): `passageiro@trip.dev` (Marina) e
 `motorista@trip.dev` (João). CPF de teste válido para KYC: `529.982.247-25`.

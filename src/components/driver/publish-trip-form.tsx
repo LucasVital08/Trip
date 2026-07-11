@@ -36,6 +36,7 @@ export function PublishTripForm({
   feePercent: number;
 }) {
   const [state, formAction] = useActionState(publishTripAction, {});
+  const v = state.values ?? {};
   const [vehicleId, setVehicleId] = useState(vehicles[0].id);
   const [selected, setSelected] = useState<Set<string>>(new Set(["nao-fumante"]));
   const [originSlug, setOriginSlug] = useState("");
@@ -111,22 +112,22 @@ export function PublishTripForm({
               type="date"
               name="departDate"
               min={todayInputValue()}
-              defaultValue={tomorrowInputValue()}
+              defaultValue={v.departDate ?? tomorrowInputValue()}
               required
               className={inputCls}
             />
           </Field>
           <Field label="Horário de saída" htmlFor="pub-time">
-            <input id="pub-time" type="time" name="departTime" defaultValue="07:00" required className={inputCls} />
+            <input id="pub-time" type="time" name="departTime" defaultValue={v.departTime ?? "07:00"} required className={inputCls} />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Ponto de embarque" htmlFor="pub-meeting" hint="Escolha um lugar público e fácil de achar.">
-              <input id="pub-meeting" name="meetingPoint" required placeholder="Ex.: Parque do Derby, em frente ao quiosque" className={inputCls} />
+              <input id="pub-meeting" name="meetingPoint" required defaultValue={v.meetingPoint} placeholder="Ex.: Parque do Derby, em frente ao quiosque" className={inputCls} />
             </Field>
           </div>
           <div className="sm:col-span-2">
             <Field label="Ponto de desembarque (opcional)" htmlFor="pub-dropoff">
-              <input id="pub-dropoff" name="dropoffPoint" placeholder="Ex.: Rodoviária de Caruaru" className={inputCls} />
+              <input id="pub-dropoff" name="dropoffPoint" defaultValue={v.dropoffPoint} placeholder="Ex.: Rodoviária de Caruaru" className={inputCls} />
             </Field>
           </div>
         </div>
@@ -270,6 +271,7 @@ export function PublishTripForm({
           name="notes"
           rows={3}
           maxLength={500}
+          defaultValue={v.notes}
           placeholder='Ex.: "Pego a BR-232 sem pressa, parada rápida pra café no meio do caminho. Curto conversa boa!"'
           className="mt-3 w-full rounded-xl border border-line bg-sand px-3.5 py-2.5 text-sm placeholder:text-ink/35"
         />

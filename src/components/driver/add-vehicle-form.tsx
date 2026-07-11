@@ -7,6 +7,7 @@ import { Field, FormError, FormSuccess, SubmitButton, inputCls } from "@/compone
 export function AddVehicleForm({ firstVehicle }: { firstVehicle: boolean }) {
   const [open, setOpen] = useState(firstVehicle);
   const [state, formAction] = useActionState(addVehicleAction, {});
+  const v = state.values ?? {};
 
   if (!open) {
     return (
@@ -30,24 +31,24 @@ export function AddVehicleForm({ firstVehicle }: { firstVehicle: boolean }) {
       </h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Marca" htmlFor="veh-brand">
-          <input id="veh-brand" name="brand" required placeholder="Chevrolet" className={inputCls} />
+          <input id="veh-brand" name="brand" required placeholder="Chevrolet" defaultValue={v.brand} className={inputCls} />
         </Field>
         <Field label="Modelo" htmlFor="veh-model">
-          <input id="veh-model" name="model" required placeholder="Onix" className={inputCls} />
+          <input id="veh-model" name="model" required placeholder="Onix" defaultValue={v.model} className={inputCls} />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Ano" htmlFor="veh-year">
-            <input id="veh-year" name="year" type="number" min={1990} max={new Date().getFullYear() + 1} required placeholder="2021" className={inputCls} />
+            <input id="veh-year" name="year" type="number" min={1990} max={new Date().getFullYear() + 1} required placeholder="2021" defaultValue={v.year} className={inputCls} />
           </Field>
           <Field label="Cor" htmlFor="veh-color">
-            <input id="veh-color" name="color" required placeholder="Prata" className={inputCls} />
+            <input id="veh-color" name="color" required placeholder="Prata" defaultValue={v.color} className={inputCls} />
           </Field>
         </div>
         <Field label="Placa" htmlFor="veh-plate">
-          <input id="veh-plate" name="plate" required placeholder="ABC1D23" className={`${inputCls} uppercase`} />
+          <input id="veh-plate" name="plate" required placeholder="ABC1D23" defaultValue={v.plate} className={`${inputCls} uppercase`} />
         </Field>
         <Field label="Categoria" htmlFor="veh-cat">
-          <select id="veh-cat" name="category" defaultValue="HATCH" className={inputCls}>
+          <select id="veh-cat" name="category" defaultValue={v.category ?? "HATCH"} className={inputCls}>
             <option value="HATCH">Hatch</option>
             <option value="SEDAN">Sedã</option>
             <option value="SUV">SUV</option>
@@ -56,7 +57,7 @@ export function AddVehicleForm({ firstVehicle }: { firstVehicle: boolean }) {
           </select>
         </Field>
         <Field label="Lugares para passageiros" htmlFor="veh-seats" hint="Sem contar o banco do motorista.">
-          <input id="veh-seats" name="seats" type="number" min={1} max={7} defaultValue={4} required className={inputCls} />
+          <input id="veh-seats" name="seats" type="number" min={1} max={7} defaultValue={v.seats ?? 4} required className={inputCls} />
         </Field>
       </div>
       <FormError error={state.error} />

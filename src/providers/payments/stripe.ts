@@ -40,6 +40,10 @@ export class StripePaymentProvider implements PaymentProvider {
     throw new Error("Integração Stripe pendente de credenciais.");
   }
 
+  async cancelCharge(_providerRef: string): Promise<void> {
+    throw new Error("Integração Stripe pendente de credenciais.");
+  }
+
   async parseWebhook(_rawBody: string, _signature: string | null): Promise<WebhookEvent | null> {
     throw new Error("Integração Stripe pendente de credenciais.");
   }

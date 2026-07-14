@@ -56,6 +56,8 @@ export interface WebhookEvent {
 export interface PaymentProvider {
   readonly name: string;
   createCharge(input: CreateChargeInput): Promise<ChargeResult>;
+  /** Cancela uma cobrança ainda não liquidada quando a persistência local falha. */
+  cancelCharge(providerRef: string): Promise<void>;
   refund(providerRef: string, amountCents: number): Promise<RefundResult>;
   /** valida assinatura e interpreta o corpo do webhook do provedor */
   parseWebhook(rawBody: string, signature: string | null): Promise<WebhookEvent | null>;

@@ -12,6 +12,7 @@ import { NextRequest } from "next/server";
 import { computeBookingPrice } from "@/lib/pricing";
 import { generateBookingCode, generateShareToken } from "@/lib/booking-code";
 import { POST as paymentWebhook } from "@/app/api/webhooks/payment/route";
+import { expireBooking } from "@/lib/booking-service";
 
 const prisma = new PrismaClient();
 const ids = { users: [] as string[], vehicles: [] as string[], trips: [] as string[], bookings: [] as string[] };
@@ -99,7 +100,7 @@ function webhookRequest(type: string, providerRef: string, bookingId: string, si
   });
 }
 
-describe("fluxo de reserva + confirmação por webhook", () => {
+describe.skipIf(!process.env.DATABASE_URL)("fluxo de reserva + confirmação por webhook", () => {
   beforeAll(async () => {
     await prisma.$connect();
   });
@@ -179,5 +180,33 @@ describe("fluxo de reserva + confirmação por webhook", () => {
     expect(payouts).toHaveLength(1);
     const t = await prisma.trip.findUniqueOrThrow({ where: { id: trip.id } });
     expect(t.seatsAvailable).toBe(2); // decrementado uma única vez
+  });
+
+  it("expiração repetida devolve os assentos apenas uma vez", async () => {
+    const { trip, passenger } = await createFixture();
+    const { booking } = await createPendingBooking(trip.id, passenger.id, 1);
+
+    await expireBooking(booking.id, "timeout");
+    await expireBooking(booking.id, "timeout repetido");
+
+    const updated = await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } });
+    const t = await prisma.trip.findUniqueOrThrow({ where: { id: trip.id } });
+    expect(updated.status).toBe("EXPIRED");
+    expect(t.seatsAvailable).toBe(3);
+  });
+
+  it("pagamento recebido depois do cancelamento é reembolsado integralmente", async () => {
+    const { trip, passenger } = await createFixture();
+    const { booking, providerRef } = await createPendingBooking(trip.id, passenger.id, 1);
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: "CANCELLED_BY_PASSENGER", cancelledAt: new Date() },
+    });
+
+    const res = await paymentWebhook(webhookRequest("payment.paid", providerRef, booking.id));
+    expect(res.status).toBe(200);
+    const payment = await prisma.payment.findUniqueOrThrow({ where: { bookingId: booking.id } });
+    expect(payment.status).toBe("REFUNDED");
+    expect(payment.refundCents).toBe(payment.amountCents);
   });
 });

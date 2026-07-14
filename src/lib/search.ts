@@ -24,7 +24,7 @@ export const TRIP_CARD_INCLUDE = {
       driverRatingCount: true,
     },
   },
-  vehicle: true,
+  vehicle: { include: { photos: { orderBy: [{ position: "asc" as const }, { createdAt: "asc" as const }], take: 1 } } },
   amenities: { include: { amenity: true } },
 } satisfies Prisma.TripInclude;
 
@@ -79,18 +79,19 @@ export async function searchTrips(params: SearchParams): Promise<TripCardData[]>
           ? [{ departAt: "asc" }]
           : [{ departAt: "asc" }]; // "recomendado" reordena em memória abaixo
 
-  const trips = await prisma.trip.findMany({ where, include: TRIP_CARD_INCLUDE, orderBy, take: 60 });
+  const trips = await prisma.trip.findMany({ where, include: TRIP_CARD_INCLUDE, orderBy, take: 200 });
 
   if (!params.ordenar || params.ordenar === "recomendado") {
     // score: reputação (55%) + preço relativo (30%) + verificado (15%)
-    const maxPrice = Math.max(...trips.map((t) => t.pricePerSeatCents), 1);
+    const prices = trips.map((t) => t.pricePerSeatCents).sort((a, b) => a - b);
+    const referencePrice = prices[Math.min(prices.length - 1, Math.floor(prices.length * 0.9))] ?? 1;
     return trips
       .map((t) => {
         const rep =
           t.driver.driverRatingCount > 0
             ? (t.driver.driverRatingAvg / 5) * Math.min(1, t.driver.driverRatingCount / 5)
             : 0.35; // motorista novo: score neutro
-        const price = 1 - t.pricePerSeatCents / maxPrice;
+        const price = Math.max(0, 1 - t.pricePerSeatCents / referencePrice);
         const verified = t.driver.identityStatus === "VERIFIED" ? 1 : 0;
         return { t, score: rep * 0.55 + price * 0.3 + verified * 0.15 };
       })

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { TripCardData } from "@/lib/search";
 import { formatBRLCompact } from "@/lib/money";
 import { formatDateShort, formatDuration, formatTime } from "@/lib/dates";
@@ -14,6 +15,7 @@ export function TripCard({ trip, showDate = true }: { trip: TripCardData; showDa
   );
   const visible = amenities.slice(0, 4);
   const extra = amenities.length - visible.length;
+  const cover = trip.vehicle.photos[0];
 
   return (
     <article className="group relative rounded-2xl border border-line bg-sand-card p-4 shadow-card transition hover:shadow-card-hover sm:p-5">
@@ -22,6 +24,21 @@ export function TripCard({ trip, showDate = true }: { trip: TripCardData; showDa
         className="absolute inset-0 z-10 rounded-2xl"
         aria-label={`${trip.originCity} para ${trip.destCity}, ${formatTime(trip.departAt)}, ${formatBRLCompact(trip.pricePerSeatCents)} por pessoa, com ${trip.driver.name}`}
       />
+      {cover && (
+        <div className="relative mb-4 aspect-[16/7] overflow-hidden rounded-xl bg-sand">
+          <Image
+            src={cover.url}
+            alt={`${trip.vehicle.brand} ${trip.vehicle.model}`}
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 100vw, 700px"
+            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+          />
+          <span className="absolute bottom-2 left-2 rounded-full bg-ink/80 px-2.5 py-1 text-xs font-bold text-white backdrop-blur">
+            {trip.vehicle.brand} {trip.vehicle.model}
+          </span>
+        </div>
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
         {/* horários e rota */}
         <div className="flex flex-1 gap-4">

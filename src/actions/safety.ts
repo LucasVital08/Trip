@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import type { ActionState } from "./auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const reportSchema = z.object({
   targetUserId: z.string().min(1),
@@ -33,6 +34,29 @@ export async function reportUserAction(
   });
   if (!parsed.success) return { error: "Preencha o motivo da denúncia." };
   if (parsed.data.targetUserId === user.id) return { error: "Denúncia inválida." };
+  if (!checkRateLimit(`report:${user.id}`, 5, 60 * 60_000)) {
+    return { error: "Limite de denúncias atingido. Tente novamente mais tarde." };
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.targetUserId },
+    select: { id: true },
+  });
+  if (!target) return { error: "Usuário denunciado não encontrado." };
+
+  if (parsed.data.tripId) {
+    const trip = await prisma.trip.findUnique({
+      where: { id: parsed.data.tripId },
+      select: { driverId: true, bookings: { select: { passengerId: true } } },
+    });
+    const participants = new Set([
+      trip?.driverId,
+      ...(trip?.bookings.map((booking) => booking.passengerId) ?? []),
+    ]);
+    if (!trip || !participants.has(user.id) || !participants.has(parsed.data.targetUserId)) {
+      return { error: "A denúncia não corresponde a esta viagem." };
+    }
+  }
 
   await prisma.report.create({
     data: {

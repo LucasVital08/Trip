@@ -29,12 +29,12 @@ export default async function ProfilePage() {
             <div className="mt-1.5 flex flex-wrap gap-4 text-sm">
               {user.driverRatingCount > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-ink/70">
-                  Como motorista: <Stars rating={user.driverRatingAvg} count={user.driverRatingCount} />
+                  Ao dirigir: <Stars rating={user.driverRatingAvg} count={user.driverRatingCount} />
                 </span>
               )}
               {user.passengerRatingCnt > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-ink/70">
-                  Como passageiro: <Stars rating={user.passengerRatingAvg} count={user.passengerRatingCnt} />
+                  Ao viajar: <Stars rating={user.passengerRatingAvg} count={user.passengerRatingCnt} />
                 </span>
               )}
             </div>
@@ -46,8 +46,8 @@ export default async function ProfilePage() {
             <Icon name="shield" size={18} className="mt-0.5 shrink-0 text-amber-deep" />
             <span>
               <strong>Identidade não verificada.</strong> A verificação (documento +
-              selfie) é obrigatória para dirigir e recomendada para passageiros — perfis
-              verificados ganham o selo e mais reservas.
+              selfie) pertence à sua conta única. Ela é obrigatória para publicar
+              viagens e aumenta a confiança quando você reserva um lugar.
             </span>
           </p>
         )}

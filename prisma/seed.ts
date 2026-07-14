@@ -209,7 +209,7 @@ async function main() {
   const vehicles: Record<string, { id: string }> = {};
   for (const [key, v] of Object.entries(VEHICLES)) {
     vehicles[key] = await prisma.vehicle.create({
-      data: { ...v, ownerId: driverUsers[key].id, photos: [] },
+      data: { ...v, ownerId: driverUsers[key].id },
     });
   }
 

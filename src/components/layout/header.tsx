@@ -27,10 +27,10 @@ export async function Header({ dark = false }: { dark?: boolean }) {
             Buscar viagem
           </Link>
           <Link
-            href={user?.driverProfile ? "/motorista" : "/motorista/comecar"}
+            href="/motorista/publicar"
             className={`hidden rounded-lg px-3 py-2 text-sm font-medium sm:block ${linkCls}`}
           >
-            {user?.driverProfile ? "Painel do motorista" : "Oferecer carona"}
+            Publicar viagem
           </Link>
 
           {user ? (
@@ -49,9 +49,8 @@ export async function Header({ dark = false }: { dark?: boolean }) {
                 <MenuLink href="/mensagens" icon="message" label="Mensagens" />
                 <MenuLink href="/favoritos" icon="heart" label="Favoritos" />
                 <MenuLink href="/perfil" icon="users" label="Perfil e segurança" />
-                {user.driverProfile && (
-                  <MenuLink href="/motorista" icon="car" label="Painel do motorista" />
-                )}
+                <MenuLink href="/motorista/publicar" icon="route" label="Publicar viagem" />
+                <MenuLink href="/motorista" icon="car" label="Viagens que publiquei" />
                 <form action={logoutAction}>
                   <button
                     type="submit"

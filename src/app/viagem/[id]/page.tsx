@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/icon";
 import { RoadDivider } from "@/components/ui/road-divider";
 import { RouteMap } from "@/components/trip/route-map";
 import { FavoriteButton } from "@/components/trip/favorite-button";
+import { VehicleGallery } from "@/components/trip/vehicle-gallery";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function TripDetailPage({
   const trip = await prisma.trip.findUnique({
     where: { id },
     include: {
-      vehicle: true,
+      vehicle: { include: { photos: { orderBy: [{ position: "asc" }, { createdAt: "asc" }] } } },
       amenities: { include: { amenity: true }, orderBy: { amenity: { sortOrder: "asc" } } },
       driver: {
         select: {
@@ -198,7 +199,13 @@ export default async function TripDetailPage({
             {/* carro e opcionais */}
             <section className="rounded-3xl border border-line bg-sand-card p-6 shadow-card">
               <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)" }}>O carro e a experiência</h2>
-              <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-ink/75">
+              <div className="mt-4">
+                <VehicleGallery
+                  photos={trip.vehicle.photos.map((photo) => ({ id: photo.id, url: photo.url }))}
+                  vehicleName={`${trip.vehicle.brand} ${trip.vehicle.model}`}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-ink/75">
                 <span className="inline-flex items-center gap-2">
                   <Icon name="car" size={17} className="text-amber-deep" />
                   {trip.vehicle.brand} {trip.vehicle.model} {trip.vehicle.year} · {trip.vehicle.color}

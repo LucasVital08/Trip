@@ -19,12 +19,12 @@ export default async function BecomeDriverPage() {
       <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-          Transforme banco vazio em renda
+          Ative a publicação de viagens na sua conta
         </h1>
         <p className="mt-2 max-w-xl leading-relaxed text-ink/60">
-          Você já vai viajar — leve passageiros e defina o seu preço. Antes de
-          publicar a primeira viagem, precisamos verificar sua identidade e sua CNH.
-          É rápido e protege todo mundo.
+          Não existe conta separada de motorista: a mesma conta que você usa para
+          reservar também publica viagens. Para oferecer lugares no seu carro,
+          precisamos apenas verificar sua identidade e sua CNH.
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { notify } from "@/providers/notifications";
 import type { ActionState } from "./auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
  * Chat interno por viagem (passageiro ↔ motorista) — o telefone pessoal
@@ -34,6 +35,9 @@ export async function sendMessageAction(
   const conversationId = String(formData.get("conversationId") ?? "");
   const body = String(formData.get("body") ?? "").trim().slice(0, 2000);
   if (!body) return { error: "Escreva uma mensagem." };
+  if (!checkRateLimit(`message:${user.id}`, 20, 60_000)) {
+    return { error: "Muitas mensagens em pouco tempo. Aguarde um minuto." };
+  }
 
   const convo = await prisma.conversation.findUnique({
     where: { id: conversationId },
@@ -62,6 +66,14 @@ export async function sendMessageAction(
 
 export async function markConversationReadAction(conversationId: string): Promise<void> {
   const user = await requireUser();
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      id: conversationId,
+      OR: [{ passengerId: user.id }, { driverId: user.id }],
+    },
+    select: { id: true },
+  });
+  if (!conversation) return;
   await prisma.message.updateMany({
     where: { conversationId, senderId: { not: user.id }, readAt: null },
     data: { readAt: new Date() },

@@ -11,7 +11,7 @@ import { TierBadge } from "@/components/ui/badges";
 import { Stars } from "@/components/ui/stars";
 import { TripManageActions } from "@/components/driver/trip-manage-actions";
 
-export const metadata: Metadata = { title: "Painel do motorista" };
+export const metadata: Metadata = { title: "Viagens que publiquei" };
 export const dynamic = "force-dynamic";
 
 export default async function DriverDashboardPage() {
@@ -55,7 +55,7 @@ export default async function DriverDashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-              Painel do motorista
+              Viagens que publiquei
             </h1>
             <p className="mt-1 flex items-center gap-3 text-ink/60">
               Olá, {user.name.split(" ")[0]}!

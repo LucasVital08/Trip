@@ -38,6 +38,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/entrar" },
   providers,
   callbacks: {
+    async signIn({ user }) {
+      if (!user.email) return false;
+      const account = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() } });
+      return !account?.blockedAt;
+    },
     jwt({ token, user }) {
       if (user?.id) token.sub = user.id;
       return token;

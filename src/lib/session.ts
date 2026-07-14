@@ -7,8 +7,8 @@ import { prisma } from "@/lib/prisma";
 export const getCurrentUser = cache(async () => {
   const session = await auth();
   if (!session?.user?.id) return null;
-  return prisma.user.findUnique({
-    where: { id: session.user.id },
+  return prisma.user.findFirst({
+    where: { id: session.user.id, blockedAt: null },
     include: { driverProfile: true },
   });
 });
@@ -23,7 +23,7 @@ export async function requireUser(callbackPath?: string) {
   return user;
 }
 
-/** Exige perfil de motorista ativo. */
+/** Exige que a conta única tenha habilitado a capacidade de publicar viagens. */
 export async function requireDriver(callbackPath?: string) {
   const user = await requireUser(callbackPath);
   if (!user.driverProfile) redirect("/motorista/comecar");

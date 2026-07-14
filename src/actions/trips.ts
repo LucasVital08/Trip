@@ -153,7 +153,13 @@ export async function cancelTripAction(
     await prisma.$transaction([
       prisma.booking.update({
         where: { id: booking.id },
-        data: { status: "CANCELLED_BY_DRIVER", cancelledAt: now, cancelReason: "Viagem cancelada pelo motorista" },
+        data: {
+          status: "CANCELLED_BY_DRIVER",
+          cancelledAt: now,
+          cancelReason: "Viagem cancelada pelo motorista",
+          activeKey: null,
+          shareRevokedAt: now,
+        },
       }),
       ...(booking.payment?.status === "PAID"
         ? [
@@ -204,14 +210,19 @@ export async function completeTripAction(
   if (trip.status !== "PUBLISHED" && trip.status !== "FULL" && trip.status !== "IN_PROGRESS") {
     return { error: "Esta viagem não pode ser concluída." };
   }
-  if (trip.departAt > new Date()) return { error: "A viagem ainda não aconteceu." };
+  const completableAt = new Date(
+    trip.arriveEstAt.getTime() + PLATFORM.completionGraceMinutes * 60_000
+  );
+  if (completableAt > new Date()) {
+    return { error: "A viagem só pode ser concluída depois da chegada estimada." };
+  }
 
   const now = new Date();
   await prisma.$transaction([
     prisma.trip.update({ where: { id: tripId }, data: { status: "COMPLETED" } }),
     prisma.booking.updateMany({
       where: { tripId, status: "CONFIRMED" },
-      data: { status: "COMPLETED" },
+      data: { status: "COMPLETED", activeKey: null },
     }),
     prisma.payout.updateMany({
       where: { bookingId: { in: trip.bookings.map((b) => b.id) }, status: "HELD" },

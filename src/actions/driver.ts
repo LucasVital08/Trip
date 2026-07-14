@@ -131,7 +131,7 @@ export async function addVehicleAction(
   }
 
   await prisma.vehicle.create({
-    data: { ...parsed.data, plate: parsed.data.plate.replace("-", ""), ownerId: user.id, photos: [] },
+    data: { ...parsed.data, plate: parsed.data.plate.replace("-", ""), ownerId: user.id },
   });
 
   revalidatePath("/motorista/veiculos");

@@ -19,6 +19,9 @@ export const PLATFORM = {
   /** Janela de expiração de reservas aguardando pagamento (minutos). */
   paymentExpiresMinutes: 30,
 
+  /** Margem após a chegada estimada antes de permitir conclusão manual. */
+  completionGraceMinutes: 30,
+
   /** Política de cancelamento pelo passageiro (reembolso conforme antecedência). */
   cancellation: {
     /** ≥ 24h antes da saída: reembolso integral. */

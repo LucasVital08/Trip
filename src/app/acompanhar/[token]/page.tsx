@@ -31,7 +31,13 @@ export default async function TrackTripPage({ params }: { params: Promise<{ toke
       },
     },
   });
-  if (!booking || booking.status === "EXPIRED") notFound();
+  if (
+    !booking ||
+    !["CONFIRMED", "COMPLETED"].includes(booking.status) ||
+    booking.shareRevokedAt ||
+    !booking.shareExpiresAt ||
+    booking.shareExpiresAt <= new Date()
+  ) notFound();
   const trip = booking.trip;
 
   const now = new Date();

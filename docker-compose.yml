@@ -29,8 +29,12 @@ services:
       AUTH_TRUST_HOST: "true"
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       PAYMENT_PROVIDER: mock
+      ALLOW_MOCK_PAYMENTS: "true" # perfil de demonstração; remova em produção real
       KYC_PROVIDER: mock
+      ALLOW_MOCK_KYC: "true" # perfil de demonstração; remova em produção real
       MAPS_PROVIDER: static
+      MEDIA_PROVIDER: local
+      ALLOW_LOCAL_UPLOADS: "true" # demo local; produção deve usar Cloudinary
       NOTIFICATION_PROVIDER: console
       PLATFORM_FEE_PERCENT: "12"
     ports:

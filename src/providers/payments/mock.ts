@@ -42,6 +42,10 @@ export class MockPaymentProvider implements PaymentProvider {
     return { providerRef, refundedCents: amountCents };
   }
 
+  async cancelCharge(_providerRef: string): Promise<void> {
+    // Cobranças mock não possuem estado externo.
+  }
+
   async parseWebhook(rawBody: string, signature: string | null): Promise<WebhookEvent | null> {
     if (signature !== "mock-signature") return null;
     try {

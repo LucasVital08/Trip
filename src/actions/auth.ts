@@ -7,6 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { formValues } from "@/lib/form-values";
 import { signIn, signOut } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export interface ActionState {
   error?: string;
@@ -25,9 +26,13 @@ export async function registerAction(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  const rawEmail = String(formData.get("email") ?? "").toLowerCase().trim();
+  if (!checkRateLimit(`register:${rawEmail}`, 5, 60 * 60_000)) {
+    return { error: "Muitas tentativas de cadastro. Aguarde e tente novamente." };
+  }
   const parsed = registerSchema.safeParse({
     name: formData.get("name"),
-    email: String(formData.get("email") ?? "").toLowerCase().trim(),
+    email: rawEmail,
     password: formData.get("password"),
   });
   if (!parsed.success) {
@@ -38,9 +43,16 @@ export async function registerAction(
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "Já existe uma conta com este e-mail. Faça login.", values: formValues(formData, ["password"]) };
 
-  await prisma.user.create({
-    data: { name, email, passwordHash: await hash(password, 10) },
-  });
+  try {
+    await prisma.user.create({
+      data: { name, email, passwordHash: await hash(password, 12) },
+    });
+  } catch (error) {
+    if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
+      return { error: "Já existe uma conta com este e-mail. Faça login." };
+    }
+    throw error;
+  }
 
   await signIn("credentials", { email, password, redirect: false });
   redirect("/");
@@ -52,6 +64,9 @@ export async function loginAction(
 ): Promise<ActionState> {
   const email = String(formData.get("email") ?? "").toLowerCase().trim();
   const password = String(formData.get("password") ?? "");
+  if (!checkRateLimit(`login:${email}`, 10, 15 * 60_000)) {
+    return { error: "Muitas tentativas de login. Aguarde alguns minutos." };
+  }
   const callbackUrl = String(formData.get("callbackUrl") ?? "") || "/";
   try {
     await signIn("credentials", { email, password, redirect: false });

@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Icon } from "@/components/ui/icon";
 import { AddVehicleForm } from "@/components/driver/add-vehicle-form";
+import { VehiclePhotoManager } from "@/components/driver/vehicle-photo-manager";
 
 export const metadata: Metadata = { title: "Meus veículos" };
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function VehiclesPage({
   const { novo } = await searchParams;
   const vehicles = await prisma.vehicle.findMany({
     where: { ownerId: user.id },
+    include: { photos: { orderBy: [{ position: "asc" }, { createdAt: "asc" }] } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -49,18 +51,25 @@ export default async function VehiclesPage({
 
         <div className="mt-6 space-y-3">
           {vehicles.map((v) => (
-            <div key={v.id} className="flex items-center gap-4 rounded-2xl border border-line bg-sand-card p-5 shadow-card">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber/15 text-amber-deep">
-                <Icon name="car" size={24} />
-              </span>
-              <div className="flex-1">
-                <p className="font-bold">
-                  {v.brand} {v.model} {v.year}
-                </p>
-                <p className="text-sm text-ink/55">
-                  {CATEGORY_LABEL[v.category]} · {v.color} · placa {v.plate} · {v.seats} lugares p/ passageiros
-                </p>
+            <div key={v.id} className="rounded-2xl border border-line bg-sand-card p-5 shadow-card">
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber/15 text-amber-deep">
+                  <Icon name="car" size={24} />
+                </span>
+                <div className="flex-1">
+                  <p className="font-bold">
+                    {v.brand} {v.model} {v.year}
+                  </p>
+                  <p className="text-sm text-ink/55">
+                    {CATEGORY_LABEL[v.category]} · {v.color} · placa {v.plate} · {v.seats} lugares p/ passageiros
+                  </p>
+                </div>
               </div>
+              <VehiclePhotoManager
+                vehicleId={v.id}
+                vehicleName={`${v.brand} ${v.model}`}
+                photos={v.photos.map((photo) => ({ id: photo.id, url: photo.url }))}
+              />
             </div>
           ))}
         </div>

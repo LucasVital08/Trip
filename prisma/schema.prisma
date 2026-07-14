@@ -188,16 +188,31 @@ model Vehicle {
   model     String
   year      Int
   color     String
-  plate     String
+  plate     String          @unique
   category  VehicleCategory @default(HATCH)
   seats     Int             @default(4) // lugares para passageiros
-  photos    String[]
   createdAt DateTime        @default(now())
 
   owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   trips Trip[]
+  photos VehiclePhoto[]
 
   @@index([ownerId])
+}
+
+model VehiclePhoto {
+  id         String   @id @default(cuid())
+  vehicleId  String
+  url        String
+  provider   String
+  storageKey String
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, storageKey])
+  @@index([vehicleId, position])
 }
 
 // ─────────────────────────────── Catálogos ───────────────────────────────
@@ -303,6 +318,12 @@ model Booking {
   totalCents        Int // pago pelo passageiro
 
   shareToken String? @unique // link de acompanhamento em tempo real
+  shareExpiresAt DateTime?
+  shareRevokedAt DateTime?
+  paymentExpiresAt DateTime?
+  // Preenchida apenas enquanto a reserva está ativa. Impede duas reservas
+  // simultâneas do mesmo passageiro para a mesma viagem.
+  activeKey String? @unique
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -317,13 +338,14 @@ model Booking {
 
   @@index([passengerId])
   @@index([tripId])
+  @@index([status, paymentExpiresAt])
 }
 
 model Payment {
   id          String        @id @default(cuid())
   bookingId   String        @unique
   provider    String // "mock", "stripe", "mercadopago"...
-  providerRef String? // id da charge/intent no provedor
+  providerRef String? @unique // id da charge/intent no provedor
   method      PaymentMethod
   status      PaymentStatus @default(PENDING)
 

@@ -12,11 +12,16 @@ export async function confirmBooking(bookingId: string): Promise<void> {
     where: { id: bookingId },
     include: { trip: { include: { driver: true } }, passenger: true, payment: true },
   });
-  if (!booking || booking.status !== "PENDING_PAYMENT") return;
+  if (!booking || booking.status !== "PENDING_PAYMENT" || booking.payment?.status !== "PAID") return;
 
-  await prisma.$transaction([
-    prisma.booking.update({ where: { id: bookingId }, data: { status: "CONFIRMED" } }),
-    prisma.payout.upsert({
+  const confirmed = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Booking" WHERE id = ${bookingId} FOR UPDATE`;
+    const changed = await tx.booking.updateMany({
+      where: { id: bookingId, status: "PENDING_PAYMENT" },
+      data: { status: "CONFIRMED" },
+    });
+    if (changed.count === 0) return false;
+    await tx.payout.upsert({
       where: { bookingId },
       create: {
         bookingId,
@@ -25,8 +30,10 @@ export async function confirmBooking(bookingId: string): Promise<void> {
         status: "HELD",
       },
       update: {},
-    }),
-  ]);
+    });
+    return true;
+  });
+  if (!confirmed) return;
 
   notify({
     kind: "booking.confirmed",
@@ -44,16 +51,23 @@ export async function confirmBooking(bookingId: string): Promise<void> {
 
 /** Expira a reserva e devolve os assentos à viagem. */
 export async function expireBooking(bookingId: string, reason: string): Promise<void> {
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) return;
-  await prisma.$transaction([
-    prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: "EXPIRED", cancelledAt: new Date(), cancelReason: reason },
-    }),
-    prisma.trip.update({
+  await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({ where: { id: bookingId } });
+    if (!booking || booking.status !== "PENDING_PAYMENT") return;
+    const changed = await tx.booking.updateMany({
+      where: { id: bookingId, status: "PENDING_PAYMENT" },
+      data: {
+        status: "EXPIRED",
+        cancelledAt: new Date(),
+        cancelReason: reason,
+        activeKey: null,
+        shareRevokedAt: new Date(),
+      },
+    });
+    if (changed.count === 0) return;
+    await tx.trip.update({
       where: { id: booking.tripId },
       data: { seatsAvailable: { increment: booking.seats } },
-    }),
-  ]);
+    });
+  });
 }

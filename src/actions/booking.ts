@@ -74,6 +74,9 @@ export async function createBookingAction(
           serviceFeeCents: price.serviceFeeCents,
           totalCents: price.totalCents,
           shareToken: generateShareToken(),
+          shareExpiresAt: new Date(trip.arriveEstAt.getTime() + 24 * 60 * 60_000),
+          paymentExpiresAt: new Date(Date.now() + PLATFORM.paymentExpiresMinutes * 60_000),
+          activeKey: `${user.id}:${tripId}`,
         },
       });
       return booking.code;
@@ -82,6 +85,12 @@ export async function createBookingAction(
     if (e instanceof Error && e.message === "SEATS_TAKEN") {
       return { error: "Ops — outro passageiro acabou de reservar. Assentos insuficientes." };
     }
+    if (typeof e === "object" && e && "code" in e && e.code === "P2002") {
+      const concurrent = await prisma.booking.findFirst({
+        where: { tripId, passengerId: user.id, status: { in: ["PENDING_PAYMENT", "CONFIRMED"] } },
+      });
+      if (concurrent) redirect(`/reserva/${concurrent.code}`);
+    }
     throw e;
   }
 
@@ -89,7 +98,9 @@ export async function createBookingAction(
 
   // 3: cobrança
   const provider = getPaymentProvider();
-  const charge = await provider.createCharge({
+  let charge;
+  try {
+    charge = await provider.createCharge({
     bookingId: booking.id,
     bookingCode: booking.code,
     method,
@@ -98,10 +109,16 @@ export async function createBookingAction(
     driverAmountCents: price.driverAmountCents,
     customer: { id: user.id, name: user.name, email: user.email },
     cardToken,
-  });
+    });
+  } catch (error) {
+    await expireBooking(booking.id, "Não foi possível iniciar o pagamento");
+    console.error("[booking] falha ao criar cobrança", error);
+    return { error: "Não foi possível iniciar o pagamento. Seus assentos foram liberados; tente novamente." };
+  }
 
-  await prisma.payment.create({
-    data: {
+  try {
+    await prisma.payment.create({
+      data: {
       bookingId: booking.id,
       provider: provider.name,
       providerRef: charge.providerRef,
@@ -114,8 +131,22 @@ export async function createBookingAction(
       cardLast4: charge.cardLast4,
       paidAt: charge.status === "paid" ? new Date() : null,
       failReason: charge.failReason,
-    },
-  });
+      },
+    });
+  } catch (error) {
+    try {
+      if (charge.status === "paid") {
+        await provider.refund(charge.providerRef, price.totalCents);
+      } else {
+        await provider.cancelCharge(charge.providerRef);
+      }
+    } catch (compensationError) {
+      console.error("[booking] falha ao compensar cobrança órfã", compensationError);
+    }
+    await expireBooking(booking.id, "Falha ao registrar pagamento");
+    console.error("[booking] falha ao persistir cobrança", error);
+    return { error: "Não foi possível registrar o pagamento. Seus assentos foram liberados." };
+  }
 
   if (charge.status === "paid") {
     await confirmBooking(booking.id);
@@ -148,45 +179,62 @@ export async function cancelBookingAction(
   }
 
   const now = new Date();
-  const refundCents =
-    booking.payment?.status === "PAID"
-      ? computeRefundCents(booking.totalCents, booking.trip.departAt, now)
-      : 0;
-
-  if (booking.payment?.status === "PAID" && refundCents > 0 && booking.payment.providerRef) {
-    await getPaymentProvider().refund(booking.payment.providerRef, refundCents);
-  }
-
-  await prisma.$transaction([
-    prisma.booking.update({
+  if (booking.trip.departAt <= now) return { error: "Não é possível cancelar depois da saída." };
+  const cancelled = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Booking" WHERE id = ${booking.id} FOR UPDATE`;
+    const current = await tx.booking.findUnique({
       where: { id: booking.id },
+      include: { payment: true, trip: true },
+    });
+    if (!current || !["CONFIRMED", "PENDING_PAYMENT"].includes(current.status)) return false;
+    const refundCents = current.payment?.status === "PAID"
+      ? computeRefundCents(current.totalCents, current.trip.departAt, now)
+      : 0;
+    if (current.payment?.status === "PAID" && refundCents > 0 && current.payment.providerRef) {
+      await getPaymentProvider().refund(current.payment.providerRef, refundCents);
+    }
+    const changed = await tx.booking.updateMany({
+      where: { id: current.id, status: current.status },
       data: {
         status: "CANCELLED_BY_PASSENGER",
         cancelledAt: now,
         cancelReason: "Cancelado pelo passageiro",
+        activeKey: null,
+        shareRevokedAt: now,
       },
-    }),
-    prisma.trip.update({
+    });
+    if (changed.count === 0) return false;
+    await tx.trip.update({
       where: { id: booking.tripId },
       data: { seatsAvailable: { increment: booking.seats } },
-    }),
-    ...(booking.payment?.status === "PAID"
-      ? [
-          prisma.payment.update({
-            where: { id: booking.payment.id },
+    });
+    if (current.payment?.status === "PAID") {
+      if (refundCents > 0) {
+        await tx.payment.update({
+            where: { id: current.payment.id },
             data: {
-              status: refundCents >= booking.totalCents ? "REFUNDED" : "PARTIALLY_REFUNDED",
+              status: refundCents >= current.totalCents ? "REFUNDED" : "PARTIALLY_REFUNDED",
               refundedAt: now,
               refundCents,
             },
-          }),
-          prisma.payout.updateMany({
-            where: { bookingId: booking.id, status: "HELD" },
-            data: { status: "REVERSED" },
-          }),
-        ]
-      : []),
-  ]);
+        });
+      }
+      if (refundCents >= current.totalCents) {
+        await tx.payout.updateMany({
+          where: { bookingId: booking.id, status: "HELD" },
+          data: { status: "REVERSED" },
+        });
+      } else {
+        const retainedRatio = (current.totalCents - refundCents) / current.totalCents;
+        await tx.payout.updateMany({
+          where: { bookingId: booking.id, status: "HELD" },
+          data: { amountCents: Math.round(current.subtotalCents * retainedRatio) },
+        });
+      }
+    }
+    return true;
+  });
+  if (!cancelled) return { error: "A reserva mudou enquanto era cancelada. Atualize a página." };
 
   revalidatePath(`/reserva/${code}`);
   revalidatePath("/minhas-viagens");

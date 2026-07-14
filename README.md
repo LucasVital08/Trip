@@ -69,7 +69,10 @@ pnpm dev
 
 ### Contas de demonstração (senha `trip123`)
 
-| Conta | Papel |
+Não existem tipos de conta separados: todo `User` pode reservar lugares e,
+depois de verificar identidade/CNH, publicar viagens na mesma sessão e perfil.
+
+| Conta | Cenário inicial |
 | --- | --- |
 | `passageiro@trip.dev` | Passageira com reserva futura, favoritos e chat |
 | `motorista@trip.dev` | Motorista verificado com viagens publicadas e ganhos |
@@ -114,6 +117,12 @@ Ver **`.env.example`** — documentado chave a chave. Resumo:
 | `PAYMENT_PROVIDER` | `mock` (dev) ou `stripe` |
 | `KYC_PROVIDER`, `MAPS_PROVIDER`, `NOTIFICATION_PROVIDER` | provedores plugáveis |
 | `PLATFORM_FEE_PERCENT` | taxa de serviço (default 12) |
+| `CRON_SECRET` | protege o job `POST /api/jobs/expire-bookings` |
+| `ALLOW_MOCK_PAYMENTS` | liberação explícita do mock em produção (somente demo) |
+| `ALLOW_MOCK_KYC` | liberação explícita do KYC mock em produção (somente demo) |
+| `MEDIA_PROVIDER` | `local` (desenvolvimento) ou `cloudinary` (produção) |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | armazenamento persistente das fotos dos veículos |
+| `ALLOW_LOCAL_UPLOADS` | libera armazenamento local em build de demonstração |
 
 ## Como trocar provedores
 
@@ -147,10 +156,9 @@ provedores, i18n, monetização futura): **`DECISIONS.md`**.
 
 ## Deploy
 
-- **Vercel + Postgres gerenciado (Neon/Supabase)**: configure as envs,
-  `pnpm prisma migrate deploy` no build e pronto. O provedor "static" de
-  mapas e o mock de pagamentos funcionam sem chaves; troque pelos reais
-  quando tiver credenciais.
+- **Vercel + Postgres gerenciado (Neon/Supabase)**: configure as envs e rode
+  `pnpm prisma migrate deploy` no build. Pagamento e KYC mock são bloqueados
+  por padrão em produção; as flags `ALLOW_MOCK_*` existem apenas para demos.
 - **Docker**: `docker compose --profile prod up --build` sobe app + banco
   (o app aplica migrations no boot; rode o seed manualmente se quiser dados
   demo).

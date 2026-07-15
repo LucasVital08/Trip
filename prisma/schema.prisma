@@ -66,10 +66,10 @@ enum PaymentStatus {
 }
 
 enum PayoutStatus {
-  HELD      // plataforma reteve (escrow)
-  RELEASED  // liberado após conclusão da viagem
-  PAID      // transferido ao motorista
-  REVERSED  // estornado (cancelamento/reembolso)
+  HELD // plataforma reteve (escrow)
+  RELEASED // liberado após conclusão da viagem
+  PAID // transferido ao motorista
+  REVERSED // estornado (cancelamento/reembolso)
 }
 
 enum ReportStatus {
@@ -109,21 +109,21 @@ model User {
 
   blockedAt DateTime?
 
-  accounts        Account[]
-  driverProfile   DriverProfile?
-  vehicles        Vehicle[]
-  tripsAsDriver   Trip[]                 @relation("DriverTrips")
-  bookings        Booking[]
-  reviewsWritten  Review[]               @relation("ReviewAuthor")
-  reviewsReceived Review[]               @relation("ReviewTarget")
-  verifications   IdentityVerification[]
-  favorites       Favorite[]
-  messagesSent    Message[]
-  convosAsPassenger Conversation[] @relation("ConvoPassenger")
-  convosAsDriver    Conversation[] @relation("ConvoDriver")
-  payouts         Payout[]
-  reportsMade     Report[]               @relation("Reporter")
-  reportsReceived Report[]               @relation("Reported")
+  accounts          Account[]
+  driverProfile     DriverProfile?
+  vehicles          Vehicle[]
+  tripsAsDriver     Trip[]                 @relation("DriverTrips")
+  bookings          Booking[]
+  reviewsWritten    Review[]               @relation("ReviewAuthor")
+  reviewsReceived   Review[]               @relation("ReviewTarget")
+  verifications     IdentityVerification[]
+  favorites         Favorite[]
+  messagesSent      Message[]
+  convosAsPassenger Conversation[]         @relation("ConvoPassenger")
+  convosAsDriver    Conversation[]         @relation("ConvoDriver")
+  payouts           Payout[]
+  reportsMade       Report[]               @relation("Reporter")
+  reportsReceived   Report[]               @relation("Reported")
 
   @@index([email])
 }
@@ -149,15 +149,15 @@ model Account {
 }
 
 model DriverProfile {
-  id            String             @id @default(cuid())
-  userId        String             @unique
-  cnhNumber     String
-  cnhCategory   String
-  cnhExpiresAt  DateTime
-  status        VerificationStatus @default(PENDING)
-  tripMessage   String? // "recado padrão" do motorista
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  cnhNumber    String
+  cnhCategory  String
+  cnhExpiresAt DateTime
+  status       VerificationStatus @default(PENDING)
+  tripMessage  String? // "recado padrão" do motorista
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -193,8 +193,8 @@ model Vehicle {
   seats     Int             @default(4) // lugares para passageiros
   createdAt DateTime        @default(now())
 
-  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  trips Trip[]
+  owner  User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  trips  Trip[]
   photos VehiclePhoto[]
 
   @@index([ownerId])
@@ -246,10 +246,10 @@ model City {
 // ─────────────────────────────── Viagens ───────────────────────────────
 
 model Trip {
-  id          String     @id @default(cuid())
-  driverId    String
-  vehicleId   String
-  status      TripStatus @default(PUBLISHED)
+  id        String     @id @default(cuid())
+  driverId  String
+  vehicleId String
+  status    TripStatus @default(PUBLISHED)
 
   originCity  String
   originState String
@@ -265,21 +265,30 @@ model Trip {
   distanceKm  Int
   durationMin Int
 
-  meetingPoint  String
-  dropoffPoint  String?
-  notes         String? // "recado da viagem"
-  seatsTotal    Int
-  seatsAvailable Int
+  meetingPoint    String
+  dropoffPoint    String?
+  meetingPlaceId  String?
+  meetingLat      Float?
+  meetingLng      Float?
+  dropoffPlaceId  String?
+  dropoffLat      Float?
+  dropoffLng      Float?
+  routeProvider   String    @default("static")
+  routePath       Json?
+  routeComputedAt DateTime?
+  notes           String? // "recado da viagem"
+  seatsTotal      Int
+  seatsAvailable  Int
 
   pricePerSeatCents Int
   tier              ExperienceTier @default(ECONOMICO)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   cancelledAt DateTime?
 
-  driver    User          @relation("DriverTrips", fields: [driverId], references: [id])
-  vehicle   Vehicle       @relation(fields: [vehicleId], references: [id])
+  driver    User           @relation("DriverTrips", fields: [driverId], references: [id])
+  vehicle   Vehicle        @relation(fields: [vehicleId], references: [id])
   amenities TripAmenity[]
   bookings  Booking[]
   reviews   Review[]
@@ -304,12 +313,12 @@ model TripAmenity {
 // ─────────────────────────────── Reservas & Financeiro ───────────────────────────────
 
 model Booking {
-  id     String        @id @default(cuid())
-  code   String        @unique // referência curta ex. TRP-8F3K2A
-  tripId String
+  id          String        @id @default(cuid())
+  code        String        @unique // referência curta ex. TRP-8F3K2A
+  tripId      String
   passengerId String
-  seats  Int
-  status BookingStatus @default(PENDING_PAYMENT)
+  seats       Int
+  status      BookingStatus @default(PENDING_PAYMENT)
 
   // fotografia de preços no momento da reserva (imutável)
   pricePerSeatCents Int
@@ -317,17 +326,17 @@ model Booking {
   serviceFeeCents   Int // taxa Trip
   totalCents        Int // pago pelo passageiro
 
-  shareToken String? @unique // link de acompanhamento em tempo real
-  shareExpiresAt DateTime?
-  shareRevokedAt DateTime?
+  shareToken       String?   @unique // link de acompanhamento em tempo real
+  shareExpiresAt   DateTime?
+  shareRevokedAt   DateTime?
   paymentExpiresAt DateTime?
   // Preenchida apenas enquanto a reserva está ativa. Impede duas reservas
   // simultâneas do mesmo passageiro para a mesma viagem.
-  activeKey String? @unique
+  activeKey        String?   @unique
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  cancelledAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  cancelledAt  DateTime?
   cancelReason String?
 
   trip      Trip     @relation(fields: [tripId], references: [id])
@@ -345,7 +354,7 @@ model Payment {
   id          String        @id @default(cuid())
   bookingId   String        @unique
   provider    String // "mock", "stripe", "mercadopago"...
-  providerRef String? @unique // id da charge/intent no provedor
+  providerRef String?       @unique // id da charge/intent no provedor
   method      PaymentMethod
   status      PaymentStatus @default(PENDING)
 
@@ -353,12 +362,12 @@ model Payment {
   serviceFeeCents   Int // retido pela plataforma
   driverAmountCents Int // repasse ao motorista
 
-  pixQrCode    String? // copia-e-cola do Pix (sandbox/mock)
-  cardLast4    String?
-  paidAt       DateTime?
-  refundedAt   DateTime?
-  refundCents  Int?
-  failReason   String?
+  pixQrCode   String? // copia-e-cola do Pix (sandbox/mock)
+  cardLast4   String?
+  paidAt      DateTime?
+  refundedAt  DateTime?
+  refundCents Int?
+  failReason  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -370,14 +379,14 @@ model Payment {
 
 // Repasse ao motorista (escrow → liberação pós-viagem)
 model Payout {
-  id         String       @id @default(cuid())
-  driverId   String
-  bookingId  String       @unique
+  id          String       @id @default(cuid())
+  driverId    String
+  bookingId   String       @unique
   amountCents Int
-  status     PayoutStatus @default(HELD)
-  releasedAt DateTime?
-  paidAt     DateTime?
-  createdAt  DateTime     @default(now())
+  status      PayoutStatus @default(HELD)
+  releasedAt  DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime     @default(now())
 
   driver  User    @relation(fields: [driverId], references: [id])
   booking Booking @relation(fields: [bookingId], references: [id])
@@ -444,12 +453,12 @@ model Conversation {
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   conversationId String
   senderId       String
   body           String
   readAt         DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id])

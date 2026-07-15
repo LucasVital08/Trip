@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireDriver } from "@/lib/session";
 import { deriveTier } from "@/lib/tier";
@@ -23,7 +24,11 @@ const publishSchema = z.object({
   seats: z.coerce.number().int().min(1, "Ofereça ao menos 1 assento.").max(7),
   price: z.string().min(1, "Defina o preço por assento."),
   meetingPoint: z.string().trim().min(5, "Descreva o ponto de encontro."),
+  meetingPlaceId: z.string().trim().optional(),
+  meetingSessionToken: z.string().uuid().optional(),
   dropoffPoint: z.string().trim().optional(),
+  dropoffPlaceId: z.string().trim().optional(),
+  dropoffSessionToken: z.string().uuid().optional(),
   notes: z.string().trim().max(500).optional(),
   amenities: z.array(z.string()),
 });
@@ -47,7 +52,11 @@ export async function publishTripAction(
     seats: formData.get("seats"),
     price: formData.get("price"),
     meetingPoint: formData.get("meetingPoint"),
+    meetingPlaceId: formData.get("meetingPlaceId") || undefined,
+    meetingSessionToken: formData.get("meetingSessionToken") || undefined,
     dropoffPoint: formData.get("dropoffPoint") || undefined,
+    dropoffPlaceId: formData.get("dropoffPlaceId") || undefined,
+    dropoffSessionToken: formData.get("dropoffSessionToken") || undefined,
     notes: formData.get("notes") || undefined,
     amenities: formData.getAll("amenities").map(String),
   });
@@ -76,9 +85,27 @@ export async function publishTripAction(
     return { error: "A data/hora de saída precisa estar no futuro.", values };
   }
 
-  const route = await getMapsProvider().estimateRoute(
-    { lat: origin.lat, lng: origin.lng },
-    { lat: dest.lat, lng: dest.lng }
+  const maps = getMapsProvider();
+  const [meetingPlace, dropoffPlace] = await Promise.all([
+    data.meetingPlaceId
+      ? maps.resolvePlace(data.meetingPlaceId, data.meetingSessionToken)
+      : null,
+    data.dropoffPlaceId
+      ? maps.resolvePlace(data.dropoffPlaceId, data.dropoffSessionToken)
+      : null,
+  ]);
+  if (maps.name === "google" && data.meetingPlaceId && !meetingPlace) {
+    return { error: "Não foi possível confirmar o ponto de embarque. Selecione-o novamente.", values };
+  }
+  if (maps.name === "google" && data.dropoffPlaceId && !dropoffPlace) {
+    return { error: "Não foi possível confirmar o ponto de desembarque. Selecione-o novamente.", values };
+  }
+
+  const routeOrigin = meetingPlace ?? { lat: origin.lat, lng: origin.lng };
+  const routeDest = dropoffPlace ?? { lat: dest.lat, lng: dest.lng };
+  const route = await maps.estimateRoute(
+    { lat: routeOrigin.lat, lng: routeOrigin.lng },
+    { lat: routeDest.lat, lng: routeDest.lng }
   );
 
   const amenityRows = await prisma.amenity.findMany({
@@ -107,8 +134,17 @@ export async function publishTripAction(
       arriveEstAt: new Date(departAt.getTime() + route.durationMin * 60_000),
       distanceKm: route.distanceKm,
       durationMin: route.durationMin,
-      meetingPoint: data.meetingPoint,
-      dropoffPoint: data.dropoffPoint,
+      meetingPoint: meetingPlace?.label ?? data.meetingPoint,
+      meetingPlaceId: meetingPlace?.placeId,
+      meetingLat: meetingPlace?.lat,
+      meetingLng: meetingPlace?.lng,
+      dropoffPoint: dropoffPlace?.label ?? data.dropoffPoint,
+      dropoffPlaceId: dropoffPlace?.placeId,
+      dropoffLat: dropoffPlace?.lat,
+      dropoffLng: dropoffPlace?.lng,
+      routeProvider: maps.name,
+      routePath: route.path as Prisma.InputJsonValue,
+      routeComputedAt: new Date(),
       notes: data.notes,
       seatsTotal: data.seats,
       seatsAvailable: data.seats,

@@ -8,7 +8,7 @@ import { VerifiedBadge } from "@/components/ui/badges";
 import { RouteMap } from "@/components/trip/route-map";
 import { RoadDivider } from "@/components/ui/road-divider";
 import { Icon } from "@/components/ui/icon";
-import { getMapsProvider } from "@/providers/maps";
+import { getTripRoutePath } from "@/lib/trip-route";
 
 export const metadata: Metadata = { title: "Acompanhar viagem" };
 export const dynamic = "force-dynamic";
@@ -48,10 +48,7 @@ export default async function TrackTripPage({ params }: { params: Promise<{ toke
         ? { label: "Em andamento", cls: "bg-amber/20 text-amber-deep" }
         : { label: "Programada", cls: "bg-ink/10 text-ink/70" };
 
-  const route = await getMapsProvider().estimateRoute(
-    { lat: trip.originLat, lng: trip.originLng },
-    { lat: trip.destLat, lng: trip.destLng }
-  );
+  const route = await getTripRoutePath(trip);
 
   return (
     <div className="min-h-dvh bg-ink text-sand-card">
@@ -68,9 +65,9 @@ export default async function TrackTripPage({ params }: { params: Promise<{ toke
 
         <div className="mt-6 overflow-hidden rounded-3xl">
           <RouteMap
-            origin={{ lat: trip.originLat, lng: trip.originLng, label: trip.originCity }}
-            dest={{ lat: trip.destLat, lng: trip.destLng, label: trip.destCity }}
-            path={route.path}
+            origin={{ lat: trip.meetingLat ?? trip.originLat, lng: trip.meetingLng ?? trip.originLng, label: trip.originCity }}
+            dest={{ lat: trip.dropoffLat ?? trip.destLat, lng: trip.dropoffLng ?? trip.destLng, label: trip.destCity }}
+            path={route}
             className="border-0"
           />
         </div>

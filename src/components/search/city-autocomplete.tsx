@@ -7,6 +7,8 @@ export interface CityOption {
   name: string;
   state: string;
   slug: string;
+  lat: number;
+  lng: number;
 }
 
 /**

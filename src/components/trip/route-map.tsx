@@ -4,6 +4,15 @@
  * Ao trocar para Google/Mapbox, este componente é o ponto de substituição.
  */
 
+import { GoogleRouteMap } from "@/components/trip/google-route-map";
+
+export interface RouteMapProps {
+  origin: { lat: number; lng: number; label: string };
+  dest: { lat: number; lng: number; label: string };
+  path?: Array<{ lat: number; lng: number }>;
+  className?: string;
+}
+
 const NE_BOUNDS = { minLat: -13.8, maxLat: -2.2, minLng: -45.2, maxLng: -33.8 };
 
 // contorno bem simplificado do litoral do Nordeste (lat, lng)
@@ -21,17 +30,26 @@ function project(lat: number, lng: number, w: number, h: number): [number, numbe
   return [x, y];
 }
 
-export function RouteMap({
+export function RouteMap(props: RouteMapProps) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY;
+  if (apiKey) {
+    return (
+      <GoogleRouteMap
+        {...props}
+        apiKey={apiKey}
+        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+      />
+    );
+  }
+  return <StaticRouteMap {...props} />;
+}
+
+function StaticRouteMap({
   origin,
   dest,
   path,
   className = "",
-}: {
-  origin: { lat: number; lng: number; label: string };
-  dest: { lat: number; lng: number; label: string };
-  path?: Array<{ lat: number; lng: number }>;
-  className?: string;
-}) {
+}: RouteMapProps) {
   const W = 640;
   const H = 480;
   const coast = COASTLINE.map(([lat, lng]) => project(lat, lng, W, H));

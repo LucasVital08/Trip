@@ -6,7 +6,8 @@ import { publishTripAction } from "@/actions/trips";
 import { deriveTier, TIER_LABEL } from "@/lib/tier";
 import { formatBRL } from "@/lib/money";
 import { todayInputValue, tomorrowInputValue } from "@/lib/dates";
-import { CityAutocomplete } from "@/components/search/city-autocomplete";
+import { CityAutocomplete, type CityOption } from "@/components/search/city-autocomplete";
+import { PlaceAutocomplete } from "@/components/maps/place-autocomplete";
 import { Field, FormError, SubmitButton, inputCls } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 
@@ -41,6 +42,8 @@ export function PublishTripForm({
   const [selected, setSelected] = useState<Set<string>>(new Set(["nao-fumante"]));
   const [originSlug, setOriginSlug] = useState("");
   const [destSlug, setDestSlug] = useState("");
+  const [originCity, setOriginCity] = useState<CityOption | null>(null);
+  const [destCity, setDestCity] = useState<CityOption | null>(null);
   const [seats, setSeats] = useState(Math.min(3, vehicles[0].seats));
   const [priceBRL, setPriceBRL] = useState("");
   const [suggestion, setSuggestion] = useState<{
@@ -97,14 +100,20 @@ export function PublishTripForm({
             label="Saindo de"
             placeholder="Ex.: Recife"
             required
-            onSelect={(c) => setOriginSlug(c?.slug ?? "")}
+            onSelect={(city) => {
+              setOriginSlug(city?.slug ?? "");
+              setOriginCity(city);
+            }}
           />
           <CityAutocomplete
             name="destSlug"
             label="Indo para"
             placeholder="Ex.: Caruaru"
             required
-            onSelect={(c) => setDestSlug(c?.slug ?? "")}
+            onSelect={(city) => {
+              setDestSlug(city?.slug ?? "");
+              setDestCity(city);
+            }}
           />
           <Field label="Data da viagem" htmlFor="pub-date">
             <input
@@ -121,14 +130,28 @@ export function PublishTripForm({
             <input id="pub-time" type="time" name="departTime" defaultValue={v.departTime ?? "07:00"} required className={inputCls} />
           </Field>
           <div className="sm:col-span-2">
-            <Field label="Ponto de embarque" htmlFor="pub-meeting" hint="Escolha um lugar público e fácil de achar.">
-              <input id="pub-meeting" name="meetingPoint" required defaultValue={v.meetingPoint} placeholder="Ex.: Parque do Derby, em frente ao quiosque" className={inputCls} />
-            </Field>
+            <PlaceAutocomplete
+              name="meetingPoint"
+              placeIdName="meetingPlaceId"
+              sessionTokenName="meetingSessionToken"
+              label="Ponto de embarque"
+              hint="Pesquise um lugar público ou escreva instruções adicionais."
+              placeholder="Ex.: Parque do Derby, Recife"
+              defaultValue={v.meetingPoint}
+              required
+              bias={originCity}
+            />
           </div>
           <div className="sm:col-span-2">
-            <Field label="Ponto de desembarque (opcional)" htmlFor="pub-dropoff">
-              <input id="pub-dropoff" name="dropoffPoint" defaultValue={v.dropoffPoint} placeholder="Ex.: Rodoviária de Caruaru" className={inputCls} />
-            </Field>
+            <PlaceAutocomplete
+              name="dropoffPoint"
+              placeIdName="dropoffPlaceId"
+              sessionTokenName="dropoffSessionToken"
+              label="Ponto de desembarque (opcional)"
+              placeholder="Ex.: Rodoviária de Caruaru"
+              defaultValue={v.dropoffPoint}
+              bias={destCity}
+            />
           </div>
         </div>
         {activeSuggestion && (

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { estimateDurationMin, estimateRoadDistanceKm, haversineKm } from "@/lib/geo";
-import type { CityHit, MapsProvider, RouteEstimate } from "./types";
+import type { CityHit, MapsProvider, PlaceSuggestion, ResolvedPlace, RouteEstimate } from "./types";
 
 /**
  * Provedor "static": autocomplete sobre o catálogo City (Postgres, ILIKE
@@ -39,6 +39,14 @@ export class StaticMapsProvider implements MapsProvider {
       };
     });
     return { distanceKm, durationMin: estimateDurationMin(distanceKm), path };
+  }
+
+  async searchPlaces(): Promise<PlaceSuggestion[]> {
+    return [];
+  }
+
+  async resolvePlace(): Promise<ResolvedPlace | null> {
+    return null;
   }
 }
 

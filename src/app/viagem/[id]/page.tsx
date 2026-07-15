@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
-import { getMapsProvider } from "@/providers/maps";
+import { getTripRoutePath } from "@/lib/trip-route";
 import { computeBookingPrice } from "@/lib/pricing";
 import { formatBRL, formatBRLCompact } from "@/lib/money";
 import { formatDateLong, formatDuration, formatTime } from "@/lib/dates";
@@ -63,10 +63,7 @@ export default async function TripDetailPage({
       ? prisma.favorite.findUnique({ where: { userId_tripId: { userId: user.id, tripId: id } } })
       : null,
     prisma.trip.count({ where: { driverId: trip.driverId, status: "COMPLETED" } }),
-    getMapsProvider().estimateRoute(
-      { lat: trip.originLat, lng: trip.originLng },
-      { lat: trip.destLat, lng: trip.destLng }
-    ),
+    getTripRoutePath(trip),
   ]);
 
   const price1 = computeBookingPrice(trip.pricePerSeatCents, 1);
@@ -146,9 +143,9 @@ export default async function TripDetailPage({
               </div>
               <div className="mt-6">
                 <RouteMap
-                  origin={{ lat: trip.originLat, lng: trip.originLng, label: trip.originCity }}
-                  dest={{ lat: trip.destLat, lng: trip.destLng, label: trip.destCity }}
-                  path={route.path}
+                  origin={{ lat: trip.meetingLat ?? trip.originLat, lng: trip.meetingLng ?? trip.originLng, label: trip.originCity }}
+                  dest={{ lat: trip.dropoffLat ?? trip.destLat, lng: trip.dropoffLng ?? trip.destLng, label: trip.destCity }}
+                  path={route}
                 />
                 <p className="mt-2 text-xs text-ink/45">
                   Horário de chegada estimado. O trajeto em detalhe (paradas, ponto exato) é combinado com o motorista pelo chat.

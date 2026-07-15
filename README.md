@@ -116,6 +116,9 @@ Ver **`.env.example`** — documentado chave a chave. Resumo:
 | `AUTH_SECRET` / `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Auth.js (Google é opcional; o botão só aparece com as chaves) |
 | `PAYMENT_PROVIDER` | `mock` (dev) ou `stripe` |
 | `KYC_PROVIDER`, `MAPS_PROVIDER`, `NOTIFICATION_PROVIDER` | provedores plugáveis |
+| `GOOGLE_MAPS_SERVER_KEY` | chave secreta restrita às APIs Routes e Places |
+| `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` | chave pública restrita ao domínio e à Maps JavaScript API |
+| `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Map ID opcional para estilo e marcadores avançados |
 | `PLATFORM_FEE_PERCENT` | taxa de serviço (default 12) |
 | `CRON_SECRET` | protege o job `POST /api/jobs/expire-bookings` |
 | `ALLOW_MOCK_PAYMENTS` | liberação explícita do mock em produção (somente demo) |
@@ -123,6 +126,19 @@ Ver **`.env.example`** — documentado chave a chave. Resumo:
 | `MEDIA_PROVIDER` | `local` (desenvolvimento) ou `cloudinary` (produção) |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | armazenamento persistente das fotos dos veículos |
 | `ALLOW_LOCAL_UPLOADS` | libera armazenamento local em build de demonstração |
+
+### Google Maps Platform
+
+Para ativar o mapa real em desenvolvimento ou no Vercel:
+
+1. habilite **Maps JavaScript API**, **Routes API** e **Places API (New)** no Google Cloud;
+2. crie uma chave de navegador restrita aos domínios do Trip e somente à Maps JavaScript API;
+3. crie uma chave de servidor separada, restrita às APIs Routes e Places;
+4. configure `MAPS_PROVIDER=google`, `GOOGLE_MAPS_SERVER_KEY` e `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`;
+5. opcionalmente crie um Map ID e configure `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`;
+6. defina cotas e alertas de orçamento antes de publicar.
+
+Sem as chaves, o app mantém automaticamente o provedor e o mapa SVG locais. As rotas do Google são calculadas ao publicar ou editar a viagem e armazenadas no banco, evitando uma nova chamada de Routes API em cada visualização.
 
 ## Como trocar provedores
 

@@ -132,8 +132,8 @@ describe.skipIf(!process.env.DATABASE_URL)("fluxo de reserva + confirmação por
     expect(updated.payout?.status).toBe("HELD");
     expect(updated.payout?.amountCents).toBe(9000); // 2 × 4500, repasse integral
     expect(updated.payout?.driverId).toBe(driver.id);
-    // fotografia de preço: total = 9000 + 12% = 10080
-    expect(updated.totalCents).toBe(10080);
+    // fotografia de preço: total = 9000 + 5% = 9450
+    expect(updated.totalCents).toBe(9450);
 
     const t = await prisma.trip.findUniqueOrThrow({ where: { id: trip.id } });
     expect(t.seatsAvailable).toBe(1);

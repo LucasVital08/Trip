@@ -159,13 +159,13 @@ console.log("\n— 2. Detalhe da viagem");
   const aside = page.locator("aside");
   const asideText = await aside.textContent();
   const subtotal = tripPix.pricePerSeatCents;
-  const fee = Math.round(subtotal * 0.12);
+  const fee = Math.round(subtotal * 0.05);
   const total = subtotal + fee;
   const mathOk = [subtotal, fee, total].every((v) => {
     const formatted = (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     return asideText.replace(/ /g, " ").includes(formatted.replace(/ /g, " "));
   });
-  check("2.2", `Breakdown: ${subtotal / 100} + ${fee / 100} (12%) = ${total / 100} visível`, mathOk);
+  check("2.2", `Breakdown: ${subtotal / 100} + ${fee / 100} (5%) = ${total / 100} visível`, mathOk);
 
   // 2.3 favoritar deslogado redireciona pro login
   await page.click('button:has-text("Salvar")');

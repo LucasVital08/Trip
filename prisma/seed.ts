@@ -1,9 +1,12 @@
 /**
- * Seed do Trip — dados realistas do Nordeste para navegar de imediato.
+ * Seed do Trip — dados realistas de todo o Brasil para navegar de imediato.
  *
  * Contas demo (senha de todas: trip123):
  *   passageiro@trip.dev — passageira (Marina)
- *   motorista@trip.dev  — motorista verificado (João) com viagens publicadas
+ *   motorista@trip.dev  — João reserva como passageiro e também publica viagens
+ *
+ * Não existe "tipo de conta": todo usuário pode reservar. Ao concluir KYC e
+ * cadastrar um veículo, a mesma conta também passa a oferecer caronas.
  */
 import { PrismaClient, VehicleCategory } from "@prisma/client";
 import { hashSync } from "bcryptjs";
@@ -41,6 +44,35 @@ const CITIES = [
   { name: "Feira de Santana", state: "BA", slug: "feira-de-santana", lat: -12.2664, lng: -38.9663 },
   { name: "Teresina", state: "PI", slug: "teresina", lat: -5.0892, lng: -42.8016 },
   { name: "São Luís", state: "MA", slug: "sao-luis", lat: -2.5307, lng: -44.3068 },
+  { name: "São Paulo", state: "SP", slug: "sao-paulo", lat: -23.5505, lng: -46.6333 },
+  { name: "Campinas", state: "SP", slug: "campinas", lat: -22.9099, lng: -47.0626 },
+  { name: "Santos", state: "SP", slug: "santos", lat: -23.9608, lng: -46.3336 },
+  { name: "Ribeirão Preto", state: "SP", slug: "ribeirao-preto", lat: -21.1775, lng: -47.8103 },
+  { name: "São José dos Campos", state: "SP", slug: "sao-jose-dos-campos", lat: -23.1896, lng: -45.8841 },
+  { name: "Rio de Janeiro", state: "RJ", slug: "rio-de-janeiro", lat: -22.9068, lng: -43.1729 },
+  { name: "Niterói", state: "RJ", slug: "niteroi", lat: -22.8833, lng: -43.1036 },
+  { name: "Campos dos Goytacazes", state: "RJ", slug: "campos-dos-goytacazes", lat: -21.7622, lng: -41.3181 },
+  { name: "Belo Horizonte", state: "MG", slug: "belo-horizonte", lat: -19.9167, lng: -43.9345 },
+  { name: "Uberlândia", state: "MG", slug: "uberlandia", lat: -18.9186, lng: -48.2772 },
+  { name: "Juiz de Fora", state: "MG", slug: "juiz-de-fora", lat: -21.7642, lng: -43.3503 },
+  { name: "Vitória", state: "ES", slug: "vitoria", lat: -20.3155, lng: -40.3128 },
+  { name: "Curitiba", state: "PR", slug: "curitiba", lat: -25.4284, lng: -49.2733 },
+  { name: "Londrina", state: "PR", slug: "londrina", lat: -23.3045, lng: -51.1696 },
+  { name: "Foz do Iguaçu", state: "PR", slug: "foz-do-iguacu", lat: -25.5163, lng: -54.5854 },
+  { name: "Florianópolis", state: "SC", slug: "florianopolis", lat: -27.5949, lng: -48.5482 },
+  { name: "Joinville", state: "SC", slug: "joinville", lat: -26.3044, lng: -48.8487 },
+  { name: "Balneário Camboriú", state: "SC", slug: "balneario-camboriu", lat: -26.9926, lng: -48.6349 },
+  { name: "Porto Alegre", state: "RS", slug: "porto-alegre", lat: -30.0346, lng: -51.2177 },
+  { name: "Caxias do Sul", state: "RS", slug: "caxias-do-sul", lat: -29.1678, lng: -51.1794 },
+  { name: "Pelotas", state: "RS", slug: "pelotas", lat: -31.7654, lng: -52.3376 },
+  { name: "Brasília", state: "DF", slug: "brasilia", lat: -15.7939, lng: -47.8828 },
+  { name: "Goiânia", state: "GO", slug: "goiania", lat: -16.6869, lng: -49.2648 },
+  { name: "Cuiabá", state: "MT", slug: "cuiaba", lat: -15.6014, lng: -56.0979 },
+  { name: "Campo Grande", state: "MS", slug: "campo-grande", lat: -20.4697, lng: -54.6201 },
+  { name: "Belém", state: "PA", slug: "belem", lat: -1.4558, lng: -48.4902 },
+  { name: "Manaus", state: "AM", slug: "manaus", lat: -3.1190, lng: -60.0217 },
+  { name: "Palmas", state: "TO", slug: "palmas", lat: -10.1842, lng: -48.3336 },
+  { name: "Porto Seguro", state: "BA", slug: "porto-seguro", lat: -16.4497, lng: -39.0647 },
 ];
 
 // ─── Catálogo de opcionais ──────────────────────────────────────────────────
@@ -70,7 +102,11 @@ const DRIVERS = [
   { key: "marcos", name: "Marcos Paulo", email: "marcos@trip.dev", bio: "Motorista aposentado do transporte escolar. Paciência de Jó, direção defensiva e muita história boa.", city: "Natal" },
   { key: "julia", name: "Júlia Sarmento", email: "julia@trip.dev", bio: "Estudante de medicina, volto pra Garanhuns nas folgas. Viagem silenciosa: ideal pra quem quer dormir.", city: "Recife" },
   { key: "pedro", name: "Pedro Cavalcanti", email: "pedro@trip.dev", bio: "Fortaleza–Natal com estilo: SUV nova, banco de couro, cafezinho na Canoa Quebrada quando dá tempo.", city: "Fortaleza" },
-  { key: "livia", name: "Lívia Rocha", email: "livia@trip.dev", bio: "Fotógrafa de casamentos rodando o NE. Aceito pet de boa — a Nina (vira-lata caramelo) às vezes vai junto.", city: "Maceió" },
+  { key: "livia", name: "Lívia Rocha", email: "livia@trip.dev", bio: "Fotógrafa de casamentos rodando o Brasil. Aceito pet de boa — a Nina (vira-lata caramelo) às vezes vai junto.", city: "Maceió" },
+  { key: "bruno", name: "Bruno Almeida", email: "bruno@trip.dev", bio: "Consultor em São Paulo, viajo com frequência para Campinas e Rio. Civic confortável, Wi-Fi e parada para café.", city: "São Paulo" },
+  { key: "camila", name: "Camila Rocha", email: "camila@trip.dev", bio: "Arquiteta carioca, divido a estrada entre Rio, São Paulo e Belo Horizonte. Carro novo e conversa leve.", city: "Rio de Janeiro" },
+  { key: "diego", name: "Diego Martins", email: "diego@trip.dev", bio: "Trabalho com tecnologia em Curitiba e rodo bastante pelo Sul. Espaço para bagagem, água e internet a bordo.", city: "Curitiba" },
+  { key: "sofia", name: "Sofia Costa", email: "sofia@trip.dev", bio: "Servidora em Brasília, faço o trecho até Goiânia com frequência. Viagem pontual, silenciosa e sem fumaça.", city: "Brasília" },
 ];
 
 const PASSENGERS = [
@@ -91,6 +127,10 @@ const VEHICLES: Record<string, { brand: string; model: string; year: number; col
   julia: { brand: "Fiat", model: "Mobi", year: 2018, color: "Azul", plate: "KHV9F21", category: "HATCH", seats: 3 },
   pedro: { brand: "Toyota", model: "Corolla Cross", year: 2024, color: "Preto", plate: "SBC1G09", category: "SUV", seats: 4 },
   livia: { brand: "Hyundai", model: "HB20S", year: 2020, color: "Branco", plate: "ORM6H74", category: "SEDAN", seats: 4 },
+  bruno: { brand: "Honda", model: "Civic", year: 2022, color: "Preto", plate: "GHT4J82", category: "SEDAN", seats: 4 },
+  camila: { brand: "Volkswagen", model: "Nivus", year: 2023, color: "Cinza", plate: "RJQ7C31", category: "SUV", seats: 4 },
+  diego: { brand: "Jeep", model: "Renegade", year: 2023, color: "Branco", plate: "BDR5E96", category: "SUV", seats: 4 },
+  sofia: { brand: "Toyota", model: "Yaris", year: 2021, color: "Prata", plate: "JKB8F24", category: "HATCH", seats: 4 },
 };
 
 // amenidades por motorista (slugs)
@@ -103,6 +143,10 @@ const DRIVER_AMENITIES: Record<string, string[]> = {
   julia: ["viagem-silenciosa", "nao-fumante", "usb"],
   pedro: ["ar-condicionado", "agua-cortesia", "wifi", "usb", "musica", "bagagem-extra", "nao-fumante", "parada-cafe"],
   livia: ["ar-condicionado", "aceita-pet", "musica", "usb", "nao-fumante"],
+  bruno: ["ar-condicionado", "wifi", "usb", "agua-cortesia", "nao-fumante", "parada-cafe"],
+  camila: ["ar-condicionado", "musica", "bom-papo", "usb", "agua-cortesia", "nao-fumante"],
+  diego: ["ar-condicionado", "agua-cortesia", "wifi", "usb", "bagagem-extra", "nao-fumante", "parada-cafe"],
+  sofia: ["viagem-silenciosa", "ar-condicionado", "nao-fumante", "usb"],
 };
 
 // rotas: [driverKey, origem, destino, hora saída, preço/assento em R$, recado]
@@ -123,9 +167,20 @@ const ROUTES: Array<[string, string, string, number, number, string]> = [
   ["livia", "Maceió", "Recife", 9, 70, "Fotógrafa a caminho de mais um casamento — mala grande cabe sim."],
   ["marcos", "Natal", "Pipa", 8, 35, "Rota de praia! Deixo na entrada de Pipa ou no centrinho."],
   ["rafael", "João Pessoa", "Recife", 19, 65, "Volta no início da noite, chegada no Derby."],
+  ["bruno", "São Paulo", "Campinas", 7, 50, "Saída da Barra Funda, com parada rápida para café antes de Campinas."],
+  ["bruno", "Campinas", "São Paulo", 18, 50, "Retorno depois do expediente, desembarque na Barra Funda."],
+  ["bruno", "São Paulo", "Rio de Janeiro", 6, 140, "Viagem pela Dutra, Wi-Fi a bordo e uma parada programada para café."],
+  ["camila", "Rio de Janeiro", "Belo Horizonte", 6, 130, "Saída cedo da Rodoviária Novo Rio, com uma parada no caminho."],
+  ["camila", "Rio de Janeiro", "São Paulo", 7, 140, "Nivus confortável, água a bordo e chegada na Barra Funda."],
+  ["diego", "Curitiba", "Florianópolis", 7, 110, "Saída do Jardim Botânico, espaço para mala e parada rápida em Joinville."],
+  ["diego", "Florianópolis", "Curitiba", 17, 110, "Retorno pela BR-101 com água, Wi-Fi e espaço no porta-malas."],
+  ["diego", "Curitiba", "Porto Alegre", 6, 150, "Viagem longa com duas paradas programadas para café e descanso."],
+  ["sofia", "Brasília", "Goiânia", 7, 80, "Saída da Rodoviária do Plano Piloto, viagem silenciosa e pontual."],
+  ["sofia", "Goiânia", "Brasília", 18, 80, "Retorno no fim do dia, sem fumaça e com carregador USB."],
 ];
 
 async function main() {
+  validateNationalSeed();
   console.log("→ limpando banco...");
   await prisma.$transaction([
     prisma.message.deleteMany(),
@@ -280,9 +335,15 @@ async function main() {
     ["tiago", "ana", 4, "Saída pontual às 5h. Vi o nascer do sol na BR-101 — experiência linda."],
     ["felipe", "pedro", 5, "Carro novíssimo, banco de couro, parada em Canoa Quebrada. Parecia turismo de luxo."],
     ["marina", "julia", 5, "Viagem silenciosa de verdade — dormi de Recife a Garanhuns. Acordei na rodoviária."],
-    ["renata", "livia", 5, "A Nina (cachorrinha) é a melhor copilota do Nordeste. Aceitou minha gata a bordo sem drama."],
+    ["renata", "livia", 5, "A Nina (cachorrinha) é a melhor copilota do Brasil. Aceitou minha gata a bordo sem drama."],
     ["tiago", "livia", 4, "Mala grande do violão coube tranquilo. Boa motorista."],
+    ["marina", "bruno", 5, "Civic muito confortável, Wi-Fi estável e parada para café no tempo certo."],
+    ["bruna", "camila", 5, "Camila foi pontual e muito cuidadosa. O Nivus estava impecável."],
+    ["felipe", "diego", 5, "Viagem tranquila pelo Sul, com bastante espaço para bagagem e água gelada."],
+    ["renata", "sofia", 5, "Sofia dirige com calma e respeitou o combinado de uma viagem silenciosa."],
   ];
+
+  validateDriverReferences(REVIEWS);
 
   let dayBack = 3;
   for (const [passKey, driverKey, rating, comment] of REVIEWS) {
@@ -464,6 +525,49 @@ async function main() {
     }),
   ]);
 
+  console.log("→ conta única: João reserva como passageiro em viagem de Rafael...");
+  const joaoPassengerTrip = tripsCreated.find((trip) => trip.driverKey === "rafael")!;
+  const joaoPassengerPrice = computeBookingPrice(joaoPassengerTrip.priceCents, 1);
+  await prisma.$transaction([
+    prisma.booking.create({
+      data: {
+        code: generateBookingCode(),
+        tripId: joaoPassengerTrip.id,
+        passengerId: driverUsers["joao"].id,
+        seats: 1,
+        status: "CONFIRMED",
+        pricePerSeatCents: joaoPassengerPrice.pricePerSeatCents,
+        subtotalCents: joaoPassengerPrice.subtotalCents,
+        serviceFeeCents: joaoPassengerPrice.serviceFeeCents,
+        totalCents: joaoPassengerPrice.totalCents,
+        shareToken: generateShareToken(),
+        payment: {
+          create: {
+            provider: "mock",
+            providerRef: "seed_pay_joao_passenger",
+            method: "PIX",
+            status: "PAID",
+            amountCents: joaoPassengerPrice.totalCents,
+            serviceFeeCents: joaoPassengerPrice.serviceFeeCents,
+            driverAmountCents: joaoPassengerPrice.driverAmountCents,
+            paidAt: new Date(),
+          },
+        },
+        payout: {
+          create: {
+            driverId: driverUsers["rafael"].id,
+            amountCents: joaoPassengerPrice.driverAmountCents,
+            status: "HELD",
+          },
+        },
+      },
+    }),
+    prisma.trip.update({
+      where: { id: joaoPassengerTrip.id },
+      data: { seatsAvailable: { decrement: 1 } },
+    }),
+  ]);
+
   // conversa demo entre Marina e João sobre a reserva futura
   const convo = await prisma.conversation.create({
     data: {
@@ -521,8 +625,62 @@ function pickMeetingPoint(city: string): string {
     "Porto de Galinhas": "Rótula do centro de Porto",
     Petrolina: "Orla de Petrolina — Catedral",
     Olinda: "Praça do Carmo",
+    "São Paulo": "Terminal Rodoviário Barra Funda — entrada principal",
+    Campinas: "Terminal Rodoviário de Campinas — embarque principal",
+    Santos: "Terminal Rodoviário de Santos — entrada principal",
+    "Rio de Janeiro": "Rodoviária Novo Rio — setor de embarque",
+    "Belo Horizonte": "Praça da Estação — entrada do Museu de Artes e Ofícios",
+    Curitiba: "Jardim Botânico — portão principal",
+    Florianópolis: "Terminal Rodoviário Rita Maria — entrada principal",
+    "Porto Alegre": "Estação Rodoviária de Porto Alegre — entrada principal",
+    Brasília: "Rodoviária do Plano Piloto — plataforma superior",
+    Goiânia: "Terminal Rodoviário de Goiânia — entrada principal",
   };
   return points[city] ?? `Centro de ${city}`;
+}
+
+function validateDriverReferences(reviews: Array<[string, string, number, string]>): void {
+  const declaredDrivers = new Set(DRIVERS.map((driver) => driver.key));
+  const referencedDrivers = new Set([
+    ...ROUTES.map(([driverKey]) => driverKey),
+    ...reviews.map(([, driverKey]) => driverKey),
+  ]);
+  const missing = [...referencedDrivers].filter(
+    (driverKey) =>
+      !declaredDrivers.has(driverKey) ||
+      !VEHICLES[driverKey] ||
+      !DRIVER_AMENITIES[driverKey]
+  );
+  if (missing.length > 0) {
+    throw new Error(`Driver keys inconsistentes no seed: ${missing.join(", ")}`);
+  }
+}
+
+function validateNationalSeed(): void {
+  if (CITIES.length !== 49) {
+    throw new Error(`O seed nacional deve conter exatamente 49 cidades; recebeu ${CITIES.length}.`);
+  }
+  const cityNames = new Set(CITIES.map((city) => city.name));
+  const citySlugs = new Set(CITIES.map((city) => city.slug));
+  if (cityNames.size !== CITIES.length || citySlugs.size !== CITIES.length) {
+    throw new Error("O seed nacional contém cidades ou slugs duplicados.");
+  }
+  const amenitySlugs = new Set(AMENITIES.map((amenity) => amenity.slug));
+  for (const driver of DRIVERS) {
+    if (!VEHICLES[driver.key] || !DRIVER_AMENITIES[driver.key]) {
+      throw new Error(`Motorista sem veículo ou amenidades: ${driver.key}`);
+    }
+    const invalidAmenity = DRIVER_AMENITIES[driver.key].find((slug) => !amenitySlugs.has(slug));
+    if (invalidAmenity) throw new Error(`Amenidade inválida para ${driver.key}: ${invalidAmenity}`);
+  }
+  for (const [driverKey, origin, dest] of ROUTES) {
+    if (!DRIVERS.some((driver) => driver.key === driverKey) || !VEHICLES[driverKey] || !DRIVER_AMENITIES[driverKey]) {
+      throw new Error(`Rota usa driverKey inconsistente: ${driverKey}`);
+    }
+    if (!cityNames.has(origin) || !cityNames.has(dest)) {
+      throw new Error(`Rota usa cidade ausente do catálogo: ${origin} → ${dest}`);
+    }
+  }
 }
 
 function hashCode(s: string): number {

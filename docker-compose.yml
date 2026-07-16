@@ -36,7 +36,7 @@ services:
       MEDIA_PROVIDER: local
       ALLOW_LOCAL_UPLOADS: "true" # demo local; produção deve usar Cloudinary
       NOTIFICATION_PROVIDER: console
-      PLATFORM_FEE_PERCENT: "12"
+      PLATFORM_FEE_PERCENT: "5"
     ports:
       - "3000:3000"
 

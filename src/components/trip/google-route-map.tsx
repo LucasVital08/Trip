@@ -66,27 +66,27 @@ export function GoogleRouteMap({
           fullscreenControl: true,
           clickableIcons: false,
           gestureHandling: "cooperative",
-          backgroundColor: "#13303d",
+          backgroundColor: "#2a1712",
         });
 
         line = new google.maps.Polyline({
           map,
           path: routePath,
-          strokeColor: "#e8872d",
+          strokeColor: "#f2a65a",
           strokeOpacity: 1,
           strokeWeight: 5,
           geodesic: false,
         });
 
         const originPin = new PinElement({
-          background: "#0b1f2a",
-          borderColor: "#e8872d",
-          glyphColor: "#f5efe6",
+          background: "#2a1712",
+          borderColor: "#f2a65a",
+          glyphColor: "#fffaf3",
         });
         const destPin = new PinElement({
-          background: "#e8872d",
-          borderColor: "#0b1f2a",
-          glyphColor: "#0b1f2a",
+          background: "#f2a65a",
+          borderColor: "#2a1712",
+          glyphColor: "#2a1712",
         });
         markers = [
           new AdvancedMarkerElement({ map, position: origin, title: origin.label, content: originPin.element }),
@@ -115,16 +115,16 @@ export function GoogleRouteMap({
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${dest.lat},${dest.lng}&travelmode=driving`;
 
   return (
-    <div className={`relative aspect-[4/3] min-h-[300px] w-full overflow-hidden rounded-2xl border border-line bg-[#13303d] ${className}`}>
+    <div className={`relative aspect-[4/3] min-h-[300px] w-full overflow-hidden rounded-2xl border border-line bg-[#2a1712] ${className}`}>
       <div
         ref={containerRef}
         role="img"
         aria-label={`Mapa interativo da rota de ${origin.label} a ${dest.label}`}
         className="h-full w-full"
       />
-      {!visible && <div className="absolute inset-0 animate-pulse bg-[#13303d]" aria-hidden="true" />}
+      {!visible && <div className="absolute inset-0 animate-pulse bg-[#2a1712]" aria-hidden="true" />}
       {failed && (
-        <div className="absolute inset-0 grid place-items-center bg-[#13303d] p-6 text-center text-sand-card">
+        <div className="absolute inset-0 grid place-items-center bg-[#2a1712] p-6 text-center text-sand-card">
           <div>
             <p className="font-bold">Não foi possível carregar o mapa agora.</p>
             <a className="mt-3 inline-flex rounded-full bg-amber px-4 py-2 text-sm font-bold text-ink" href={directionsUrl} target="_blank" rel="noreferrer">

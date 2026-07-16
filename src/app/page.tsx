@@ -35,7 +35,7 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber/30 bg-amber/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-amber">
               <Icon name="route" size={14} />
-              Nordeste, de cidade em cidade
+              Pelo Brasil, de cidade em cidade
             </p>
             <h1
               className="text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl"

@@ -22,7 +22,7 @@ export function TripManageActions({
       {canComplete && (
         <form action={completeAction}>
           <input type="hidden" name="tripId" value={tripId} />
-          <SubmitButton pendingText="Concluindo…">Marcar como concluída</SubmitButton>
+          <SubmitButton variant="go" pendingText="Concluindo…">Marcar como concluída</SubmitButton>
         </form>
       )}
       {canCancel && (

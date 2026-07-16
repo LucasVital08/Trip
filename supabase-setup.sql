@@ -660,7 +660,7 @@ INSERT INTO public."Review" VALUES ('cmrexyd8o007h7dg410rejbu5', 'cmrexyd8h007a7
 INSERT INTO public."Review" VALUES ('cmrexyd8q007j7dg4nnqvn5bk', 'cmrexyd8h007a7dg4jvne66s8', 'cmrexyd8l007c7dg49opv0uoi', 'cmrexyd05001e7dg488p1vgwn', 'cmrexyd0g001n7dg4iodu8axl', 'DRIVER_TO_PASSENGER', 5, 'Passageiro(a) pontual e educado(a). Viagem tranquila!', '2026-05-28 17:15:00');
 INSERT INTO public."Review" VALUES ('cmrexyd8z007s7dg44gg8z7z1', 'cmrexyd8s007l7dg4hb350zu5', 'cmrexyd8w007n7dg4mk0zucb8', 'cmrexyd0a001k7dg46mfygl74', 'cmrexyd02001b7dg4au2mkw2n', 'PASSENGER_TO_DRIVER', 5, 'Viagem silenciosa de verdade — dormi de Recife a Garanhuns. Acordei na rodoviária.', '2026-05-23 18:21:00');
 INSERT INTO public."Review" VALUES ('cmrexyd91007u7dg4n8dhcdjt', 'cmrexyd8s007l7dg4hb350zu5', 'cmrexyd8w007n7dg4mk0zucb8', 'cmrexyd02001b7dg4au2mkw2n', 'cmrexyd0a001k7dg46mfygl74', 'DRIVER_TO_PASSENGER', 5, 'Passageiro(a) pontual e educado(a). Viagem tranquila!', '2026-05-23 19:21:00');
-INSERT INTO public."Review" VALUES ('cmrexyd9b00837dg4h3sxykzo', 'cmrexyd93007w7dg4tdbiqtdp', 'cmrexyd98007y7dg44gzzsruz', 'cmrexyd0h001o7dg47k5b8g6s', 'cmrexyd07001h7dg4uafb9fpm', 'PASSENGER_TO_DRIVER', 5, 'A Nina (cachorrinha) é a melhor copilota do Nordeste. Aceitou minha gata a bordo sem drama.', '2026-05-18 13:25:00');
+INSERT INTO public."Review" VALUES ('cmrexyd9b00837dg4h3sxykzo', 'cmrexyd93007w7dg4tdbiqtdp', 'cmrexyd98007y7dg44gzzsruz', 'cmrexyd0h001o7dg47k5b8g6s', 'cmrexyd07001h7dg4uafb9fpm', 'PASSENGER_TO_DRIVER', 5, 'A Nina (cachorrinha) é a melhor copilota do Brasil. Aceitou minha gata a bordo sem drama.', '2026-05-18 13:25:00');
 INSERT INTO public."Review" VALUES ('cmrexyd9c00857dg4agsxvt49', 'cmrexyd93007w7dg4tdbiqtdp', 'cmrexyd98007y7dg44gzzsruz', 'cmrexyd07001h7dg4uafb9fpm', 'cmrexyd0h001o7dg47k5b8g6s', 'DRIVER_TO_PASSENGER', 5, 'Passageiro(a) pontual e educado(a). Viagem tranquila!', '2026-05-18 14:25:00');
 INSERT INTO public."Review" VALUES ('cmrexyd9m008e7dg41bhkxltz', 'cmrexyd9f00877dg4vdq1otux', 'cmrexyd9i00897dg4iqd41pqu', 'cmrexyd0d001l7dg4esjjfstz', 'cmrexyd07001h7dg4uafb9fpm', 'PASSENGER_TO_DRIVER', 4, 'Mala grande do violão coube tranquilo. Boa motorista.', '2026-05-13 13:25:00');
 INSERT INTO public."Review" VALUES ('cmrexyd9o008g7dg4cnem2s3k', 'cmrexyd9f00877dg4vdq1otux', 'cmrexyd9i00897dg4iqd41pqu', 'cmrexyd07001h7dg4uafb9fpm', 'cmrexyd0d001l7dg4esjjfstz', 'DRIVER_TO_PASSENGER', 5, 'Passageiro(a) pontual e educado(a). Viagem tranquila!', '2026-05-13 14:25:00');
@@ -1643,5 +1643,4 @@ ALTER TABLE ONLY public."Vehicle"
 --
 -- PostgreSQL database dump complete
 --
-
 

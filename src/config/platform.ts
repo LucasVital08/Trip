@@ -7,8 +7,8 @@
  * premium driver, etc.) — ver DECISIONS.md.
  */
 export const PLATFORM = {
-  /** Taxa de serviço (%) sobre o subtotal do motorista. Parametrizável por env. */
-  feePercent: Number(process.env.PLATFORM_FEE_PERCENT ?? 12),
+  /** Taxa de entrada baixa para tracionar o marketplace; ajustável por env sem deploy. */
+  feePercent: Number(process.env.PLATFORM_FEE_PERCENT ?? 5),
 
   /** Gancho: taxa fixa por reserva (centavos), somada ao percentual. Hoje 0. */
   fixedFeeCents: 0,

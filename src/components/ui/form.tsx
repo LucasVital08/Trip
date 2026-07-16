@@ -38,11 +38,12 @@ export function SubmitButton({
   children: React.ReactNode;
   pendingText?: string;
   className?: string;
-  variant?: "primary" | "dark" | "ghost" | "danger";
+  variant?: "primary" | "go" | "dark" | "ghost" | "danger";
 }) {
   const { pending } = useFormStatus();
   const styles = {
     primary: "bg-amber text-ink hover:bg-amber-deep",
+    go: "bg-trust text-sand-card hover:bg-trust-deep",
     dark: "bg-ink text-sand-card hover:bg-ink-2",
     ghost: "border border-line bg-transparent text-ink hover:bg-ink/5",
     danger: "border border-red-800/30 bg-transparent text-red-900 hover:bg-red-900/5",

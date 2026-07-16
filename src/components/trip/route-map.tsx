@@ -1,7 +1,6 @@
 /**
- * Mapa SVG da rota — desenhado localmente (provedor "static"), sem tiles
- * externos. Contorno estilizado do litoral NE + rota tracejada em âmbar.
- * Ao trocar para Google/Mapbox, este componente é o ponto de substituição.
+ * Mapa SVG nacional do provedor "static", com enquadramento automático.
+ * Quando as credenciais existem, o wrapper usa o Google Maps interativo.
  */
 
 import { GoogleRouteMap } from "@/components/trip/google-route-map";
@@ -13,20 +12,38 @@ export interface RouteMapProps {
   className?: string;
 }
 
-const NE_BOUNDS = { minLat: -13.8, maxLat: -2.2, minLng: -45.2, maxLng: -33.8 };
+interface Bounds {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+}
 
-// contorno bem simplificado do litoral do Nordeste (lat, lng)
-const COASTLINE: Array<[number, number]> = [
-  [-2.53, -44.3], [-2.8, -42.8], [-2.9, -41.8], [-3.2, -40.9], [-3.71, -38.54],
-  [-4.3, -37.8], [-4.9, -37.2], [-5.19, -36.5], [-5.5, -35.4], [-5.79, -35.21],
-  [-6.5, -34.95], [-7.12, -34.85], [-7.9, -34.83], [-8.05, -34.87], [-8.7, -35.05],
-  [-9.4, -35.5], [-9.65, -35.71], [-10.3, -36.3], [-10.91, -37.05], [-11.5, -37.35],
-  [-12.5, -38.1], [-12.97, -38.5], [-13.6, -38.9],
-];
+const PADDING_RATIO = 0.35;
+const MIN_GEO_SPAN = 0.6;
 
-function project(lat: number, lng: number, w: number, h: number): [number, number] {
-  const x = ((lng - NE_BOUNDS.minLng) / (NE_BOUNDS.maxLng - NE_BOUNDS.minLng)) * w;
-  const y = ((NE_BOUNDS.maxLat - lat) / (NE_BOUNDS.maxLat - NE_BOUNDS.minLat)) * h;
+function calculateBounds(points: Array<{ lat: number; lng: number }>): Bounds {
+  const lats = points.map((point) => point.lat);
+  const lngs = points.map((point) => point.lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLng = (minLng + maxLng) / 2;
+  const latSpan = Math.max(maxLat - minLat, MIN_GEO_SPAN) * (1 + PADDING_RATIO * 2);
+  const lngSpan = Math.max(maxLng - minLng, MIN_GEO_SPAN) * (1 + PADDING_RATIO * 2);
+  return {
+    minLat: centerLat - latSpan / 2,
+    maxLat: centerLat + latSpan / 2,
+    minLng: centerLng - lngSpan / 2,
+    maxLng: centerLng + lngSpan / 2,
+  };
+}
+
+function project(lat: number, lng: number, bounds: Bounds, w: number, h: number): [number, number] {
+  const x = ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * w;
+  const y = ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * h;
   return [x, y];
 }
 
@@ -52,20 +69,20 @@ function StaticRouteMap({
 }: RouteMapProps) {
   const W = 640;
   const H = 480;
-  const coast = COASTLINE.map(([lat, lng]) => project(lat, lng, W, H));
-  const coastD = coast.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  // polígono do "continente" fechando pela esquerda
-  const landD = `${coastD} L0,${H} L0,0 Z`;
-
-  const [ox, oy] = project(origin.lat, origin.lng, W, H);
-  const [dx, dy] = project(dest.lat, dest.lng, W, H);
-  const routePoints = (path && path.length > 1
-    ? path.map((p) => project(p.lat, p.lng, W, H))
+  const geoPath = path && path.length > 1
+    ? path
     : [
-        [ox, oy],
-        [(ox + dx) / 2, (oy + dy) / 2 - 30],
-        [dx, dy],
-      ]) as Array<[number, number]>;
+        origin,
+        {
+          lat: (origin.lat + dest.lat) / 2 + Math.max(Math.abs(origin.lat - dest.lat) * 0.08, 0.04),
+          lng: (origin.lng + dest.lng) / 2,
+        },
+        dest,
+      ];
+  const bounds = calculateBounds([origin, dest, ...geoPath]);
+  const [ox, oy] = project(origin.lat, origin.lng, bounds, W, H);
+  const [dx, dy] = project(dest.lat, dest.lng, bounds, W, H);
+  const routePoints = geoPath.map((point) => project(point.lat, point.lng, bounds, W, H));
   const routeD = routePoints
     .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`)
     .join(" ");
@@ -80,10 +97,13 @@ function StaticRouteMap({
       aria-label={`Mapa da rota de ${origin.label} a ${dest.label}`}
       className={`h-auto w-full rounded-2xl border border-line ${className}`}
     >
-      {/* oceano */}
-      <rect width={W} height={H} fill="#13303d" />
-      {/* continente */}
-      <path d={landD} fill="#0b1f2a" stroke="#1d4152" strokeWidth="2" />
+      <defs>
+        <radialGradient id="route-earth-night" cx="50%" cy="42%" r="72%">
+          <stop offset="0%" stopColor="#3b241b" />
+          <stop offset="100%" stopColor="#2a1712" />
+        </radialGradient>
+      </defs>
+      <rect width={W} height={H} fill="url(#route-earth-night)" />
       {/* grade sutil */}
       {Array.from({ length: 7 }, (_, i) => (
         <line key={`v${i}`} x1={(i + 1) * (W / 8)} y1="0" x2={(i + 1) * (W / 8)} y2={H} stroke="#ffffff" strokeOpacity="0.03" />
@@ -94,8 +114,8 @@ function StaticRouteMap({
       {/* rota */}
       <path d={routeD} fill="none" stroke="#f2a65a" strokeWidth="3.5" strokeDasharray="10 8" strokeLinecap="round" />
       {/* origem */}
-      <circle cx={ox} cy={oy} r="7" fill="#0b1f2a" stroke="#f2a65a" strokeWidth="3" />
-      <text x={ox + labelDx(ox)} y={oy + 4} textAnchor={labelAnchor(ox)} fontSize="17" fontWeight="700" fill="#f5efe6" fontFamily="var(--font-sans)">
+      <circle cx={ox} cy={oy} r="7" fill="#2a1712" stroke="#f2a65a" strokeWidth="3" />
+      <text x={ox + labelDx(ox)} y={oy + 4} textAnchor={labelAnchor(ox)} fontSize="17" fontWeight="700" fill="#fffaf3" fontFamily="var(--font-sans)">
         {origin.label}
       </text>
       {/* destino */}

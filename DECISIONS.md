@@ -25,12 +25,12 @@ Formatação BRL centralizada em `src/lib/money.ts`.
 
 ## 3. Composição de preço e taxa
 
-**A taxa Trip (12%, `PLATFORM_FEE_PERCENT`) é somada por cima do preço do
+**A taxa Trip (5%, `PLATFORM_FEE_PERCENT`) é somada por cima do preço do
 motorista** — o motorista recebe 100% do valor que anunciou:
 
 ```
 subtotal = preço/assento × assentos      → repasse integral ao motorista
-taxa     = subtotal × 12% (+ taxa fixa, hoje 0)
+taxa     = subtotal × 5% (+ taxa fixa, hoje 0)
 total    = subtotal + taxa               → pago pelo passageiro
 ```
 
@@ -107,15 +107,15 @@ Mercado Pago/Pagar.me/Asaas são plugáveis pela mesma interface. A simulação
 de Pix em dev usa **o mesmo caminho do webhook** que um provedor real usaria —
 nada de atalho que esconderia bug de integração.
 
-## 9. Mapas — provedor "static"
+## 9. Mapas — cobertura nacional
 
-Autocomplete e rotas servidos por um **catálogo próprio de 20 cidades do NE**
-(nome, UF, lat/lng) + estimativa `haversine × 1,25` (fator rodoviário) e
-75 km/h médios. O mapa da rota é um **SVG desenhado localmente** (litoral NE
-estilizado + rota tracejada âmbar) — zero dependência de rede/chave, estética
-própria da marca. Google/Mapbox entram pela interface `MapsProvider` quando
-houver chave. Bônus: catálogo fechado de cidades = qualidade de dados na busca
-(sem "Recife" vs "recife-PE" vs typo).
+Autocomplete e rotas usam um **catálogo próprio de 49 cidades de todo o Brasil**
+(nome, UF, lat/lng). O provedor static estima `haversine × 1,25` (fator
+rodoviário) e 75 km/h médios; seu mapa SVG usa fundo abstrato agnóstico de
+região, enquadramento automático, grade sutil e rota tracejada âmbar. Com
+credenciais, Google Maps Platform fornece mapa interativo, Places e Routes por
+meio da mesma interface `MapsProvider`. O catálogo fechado preserva a qualidade
+dos dados na busca (sem "Recife" vs "recife-PE" vs typo).
 
 ## 10. KYC
 

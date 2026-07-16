@@ -9,7 +9,7 @@ intermediação de pagamento) e a Uber (preço por algoritmo, commodity urbana):
 
 - **Preço livre definido pelo motorista** — a plataforma sugere uma faixa
   (rateio → experiência completa), mas nunca impõe;
-- **Taxa de serviço transparente** (12%, configurável) somada ao preço do
+- **Taxa de serviço transparente** (5%, configurável) somada ao preço do
   motorista e exibida no checkout;
 - **Lógica Airbnb**: viagens declaram opcionais (ar, Wi-Fi, pet, silêncio…),
   são etiquetadas por faixa de experiência (Econômico / Conforto / Premium) e
@@ -21,8 +21,8 @@ análogo ao Airbnb) — conecta motoristas e passageiros e cobra taxa de serviç
 o acordo de transporte é entre os usuários. Esse posicionamento permeia a
 modelagem de dados (Payment/Payout separados, escrow), a copy e os termos.
 
-Foco inicial: rotas intermunicipais e interestaduais do Nordeste
-(Recife, Caruaru, João Pessoa, Natal, Fortaleza, Maceió…).
+Cobertura nacional: rotas intermunicipais e interestaduais nas cinco regiões
+do Brasil, com cidades, motoristas e viagens de demonstração em todo o país.
 
 ---
 
@@ -36,7 +36,7 @@ Foco inicial: rotas intermunicipais e interestaduais do Nordeste
 | Auth | Auth.js v5 (credenciais + Google OAuth opcional), sessões JWT |
 | Pagamentos | Adaptador `PaymentProvider` — mock (dev) / esqueleto Stripe Connect |
 | KYC | Adaptador `KycProvider` — mock com validação real de CPF |
-| Mapas | Adaptador `MapsProvider` — "static" (catálogo + haversine, sem rede) |
+| Mapas | Adaptador `MapsProvider` — Google Maps Platform + fallback static nacional |
 | Notificações | Adaptador `NotificationProvider` — console (dev) |
 | Testes | Vitest (unitários de regra + integração com Postgres) |
 
@@ -58,7 +58,7 @@ docker compose up -d db
 cp .env.example .env
 # preencha AUTH_SECRET (openssl rand -base64 32); o restante já funciona em dev
 
-# 4. migrations + seed (cidades do NE, motoristas, 60 viagens, avaliações)
+# 4. migrations + seed (49 cidades de todo o Brasil, motoristas, viagens e avaliações)
 pnpm db:migrate
 pnpm db:seed
 
@@ -75,7 +75,10 @@ depois de verificar identidade/CNH, publicar viagens na mesma sessão e perfil.
 | Conta | Cenário inicial |
 | --- | --- |
 | `passageiro@trip.dev` | Passageira com reserva futura, favoritos e chat |
-| `motorista@trip.dev` | Motorista verificado com viagens publicadas e ganhos |
+| `motorista@trip.dev` | João: motorista verificado com viagens publicadas e ganhos, que também viaja como passageiro |
+
+Uma conta só, modelo BlaBlaCar: o menu mostra Buscar viagem e Oferecer carona
+lado a lado para todo mundo.
 
 ### Fluxos para experimentar
 
@@ -119,7 +122,7 @@ Ver **`.env.example`** — documentado chave a chave. Resumo:
 | `GOOGLE_MAPS_SERVER_KEY` | chave secreta restrita às APIs Routes e Places |
 | `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` | chave pública restrita ao domínio e à Maps JavaScript API |
 | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Map ID opcional para estilo e marcadores avançados |
-| `PLATFORM_FEE_PERCENT` | taxa de serviço (default 12) |
+| `PLATFORM_FEE_PERCENT` | taxa de serviço (default 5) |
 | `CRON_SECRET` | protege o job `POST /api/jobs/expire-bookings` |
 | `ALLOW_MOCK_PAYMENTS` | liberação explícita do mock em produção (somente demo) |
 | `ALLOW_MOCK_KYC` | liberação explícita do KYC mock em produção (somente demo) |
@@ -163,7 +166,7 @@ src/
   actions/       server actions (reserva, publicação, chat, avaliação, KYC…)
   app/           rotas (App Router) + APIs (webhook, cidades, sugestão de preço)
   components/    UI (tokens da marca, mobile-first, acessível)
-prisma/          schema, migrations, seed realista do NE
+prisma/          schema, migrations, seed realista de todo o Brasil
 tests/           unitários (pricing/tier/providers) + integração (webhook/reserva)
 ```
 

@@ -18,7 +18,7 @@ export function BrandMark({
       style={{ fontFamily: "var(--font-display)" }}
     >
       {BRAND.name}
-      <span className="text-amber">.</span>
+      <span className="text-dot">.</span>
     </span>
   );
 }

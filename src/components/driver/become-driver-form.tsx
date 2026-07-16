@@ -55,7 +55,7 @@ export function BecomeDriverForm({
       </div>
 
       <FormError error={state.error} />
-      <SubmitButton className="w-full sm:w-auto" pendingText="Verificando…">
+      <SubmitButton variant="go" className="w-full sm:w-auto" pendingText="Verificando…">
         Enviar verificação
       </SubmitButton>
     </form>

@@ -17,7 +17,7 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: `${BRAND.name}. — Viagens compartilhadas pelo Nordeste`,
+    default: `${BRAND.name}. — Viagens compartilhadas por todo o Brasil`,
     template: `%s · ${BRAND.name}.`,
   },
   description: BRAND.description,

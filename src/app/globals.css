@@ -2,15 +2,32 @@
 
 /* ─── Tokens da marca Trip ─────────────────────────────────────────────── */
 @theme {
-  --color-ink: #0b1f2a; /* asfalto noite */
-  --color-ink-2: #13303d;
-  --color-ink-3: #1d4152;
-  --color-amber: #f2a65a; /* faixa de rodovia */
-  --color-amber-deep: #e0852f;
-  --color-sand: #f5efe6; /* superfície clara */
-  --color-sand-card: #fffdf9;
-  --color-line: #ded4c4;
-  --color-trust: #2e7d5b; /* verificação/confiança */
+  /* base terracota (asfalto de terra batida) */
+  --color-ink: #2a1712;
+  --color-ink-2: #3b241b;
+  --color-ink-3: #4f3226;
+
+  /* acento primário: terracota. amber/amber-deep ficam como ALIAS para não
+     quebrar as ~150 classes existentes (bg-amber, text-amber-deep...). Em
+     código novo, prefira clay/clay-deep. */
+  --color-clay: #e2683c;
+  --color-clay-deep: #c9532b;
+  --color-amber: #e2683c;
+  --color-amber-deep: #c9532b;
+
+  /* ponto da marca "trip." + faixa de rodovia — âmbar preservado */
+  --color-dot: #f2a65a;
+  --color-dot-deep: #e0852f;
+
+  /* verde de ação/confiança */
+  --color-trust: #3f7d57;
+  --color-trust-deep: #33684a;
+  --color-go: #4fa574;
+
+  /* superfícies quentes */
+  --color-sand: #f7efe6;
+  --color-sand-card: #fffaf3;
+  --color-line: #e6d7c6;
 
   --font-display: var(--font-fraunces), "Georgia", serif;
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
@@ -31,8 +48,8 @@ body {
   height: 4px;
   background: repeating-linear-gradient(
     90deg,
-    var(--color-amber) 0,
-    var(--color-amber) 28px,
+    var(--color-dot) 0,
+    var(--color-dot) 28px,
     transparent 28px,
     transparent 48px
   );
@@ -44,8 +61,8 @@ body {
   opacity: 0.55;
   background: repeating-linear-gradient(
     90deg,
-    var(--color-amber) 0,
-    var(--color-amber) 20px,
+    var(--color-dot) 0,
+    var(--color-dot) 20px,
     transparent 20px,
     transparent 36px
   );

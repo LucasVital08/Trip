@@ -62,7 +62,7 @@ export interface PriceSuggestion {
 }
 
 const FUEL_COST_PER_KM_CENTS = 62; // ~R$0,62/km (consumo médio 12 km/L × R$7,40/L)
-const TOLL_PER_100KM_CENTS = 350; // pedágio médio estimado no NE
+const TOLL_PER_100KM_CENTS = 350; // pedágio médio estimado no Brasil
 
 export function suggestPricePerSeat(distanceKm: number, seatsTotal: number): PriceSuggestion {
   if (distanceKm <= 0 || seatsTotal < 1) {

@@ -161,7 +161,7 @@ export function CheckoutForm({
 
       <FormError error={state.error} />
 
-      <SubmitButton className="w-full py-3.5 text-base" pendingText="Processando…">
+      <SubmitButton variant="go" className="w-full py-3.5 text-base" pendingText="Processando…">
         {method === "PIX" ? "Gerar Pix e reservar" : `Pagar ${formatBRL(price.totalCents)}`}
       </SubmitButton>
     </form>
